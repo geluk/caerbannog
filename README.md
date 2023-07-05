@@ -40,7 +40,7 @@ def configure():
     Do(
         Package("git").is_installed(),
         File(home_dir(".gitconfig")).has_template("gitconfig.j2"),
-        File(home_dir(".gitignore")).has_content(".vscode\n"),
+        File(home_dir(".gitignore")).has_lines(".vscode"),
     )
 ```
 
@@ -77,7 +77,7 @@ like. For instance, you can declare that the file `.gitignore` in your home
 directory has `.vscode` as its content in the following manner:
 
 ```py
-File(home_dir(".gitignore")).has_content(".vscode\n")
+File(home_dir(".gitignore")).has_lines(".vscode")
 ```
 
 If the file exists in your home directory, and it has the content you specified,

@@ -75,6 +75,16 @@ class File(_PathBase):
 
         return self.has_content(content)
 
+    def has_lines(self, *lines: str, end: Union[str, None] = None, final_newline=True):
+        if end is None:
+            end = os.linesep
+
+        joined = os.linesep.join(lines)
+        if final_newline:
+            joined += os.linesep
+
+        return self.has_content(joined)
+
     def has_content(self, content: Union[str, bytes]):
         self._is_file()
         if type(content) is str:
