@@ -28,6 +28,9 @@ class Setup:
         password.set_loader(load_from_command)
         return self
 
+    def load_plugin(self, name: str):
+        plugin.load_plugin(name)
+
 
 _setup = Setup()
 
