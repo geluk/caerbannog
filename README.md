@@ -62,7 +62,7 @@ def configure():
 Now run the script to bring your machine to its desired state:
 
 ```
-$ python configure.py configure laptop
+$ python configure.py apply laptop
 ```
 
 All actions that are taken and changes that are made are clearly reported:
@@ -102,5 +102,5 @@ Now, if you run the script, you can apply the `git` role by selecting the
 `laptop` target:
 
 ```
-python ./configure.py configure laptop
+python ./configure.py apply laptop
 ```

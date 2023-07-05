@@ -26,13 +26,11 @@ def configure(args: Namespace):
 
         subprocess.run(command)
     else:
-        plugin.load_plugin("plugins.colours")
-
         if args.show_context:
             print(json.dumps(context.context(), indent=2))
             exit(0)
 
-        target.current().execute(role_limit=args.role)
+        target.current().execute(role_limit=args.role.split(","))
 
 
 def show_target(args: Namespace):

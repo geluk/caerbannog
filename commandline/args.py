@@ -10,29 +10,38 @@ def parse():
 
     subparsers = parser.add_subparsers(metavar="action")
 
-    configure = subparsers.add_parser(
-        "configure", description="Configure the system.", help="Configure the system"
+    apply = subparsers.add_parser(
+        "apply", description="Apply a target to the system.", help="Apply a target to the system"
     )
-    configure.add_argument("target", type=str)
-    configure.add_argument(
+    apply.add_argument("target", type=str, help="Name of the target to apply")
+
+    apply.add_argument(
+        "--elevate", action="store_true", help="Run as a privileged process"
+    )
+    apply.add_argument(
         "--dry-run",
         action="store_true",
-        help="Do not modify anything, only show what would happen.",
+        help="Do not modify anything, only show what would happen",
     )
-    configure.add_argument(
-        "--elevate", action="store_true", help="Run as a privileged process."
+    apply.add_argument(
+        "--role",
+        type=str,
+        metavar="ROLES",
+        help="Comma-separated list of roles to which configuration should be limited",
     )
-    configure.add_argument(
+    apply.add_argument(
+        "--show-context", action="store_true", help="Show all context variables"
+    )
+
+    apply_advanced = apply.add_argument_group("advanced options")
+    apply_advanced.add_argument(
         "--context",
         type=str,
         metavar="JSON",
-        help="Override the default context with a JSON-serialized context string.",
+        help="Override the default context with a JSON-serialized context string",
     )
-    configure.add_argument(
-        "--show-context", action="store_true", help="Show all context variables."
-    )
-    configure.add_argument("--role", type=str, nargs="*", help="Filter roles")
-    configure.set_defaults(func=subcommands.configure)
+
+    apply.set_defaults(func=subcommands.configure)
 
     target = subparsers.add_parser(
         "target",
