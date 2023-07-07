@@ -30,7 +30,8 @@ def configure(args: Namespace):
             print(json.dumps(context.context(), indent=2))
             exit(0)
 
-        target.current().execute(role_limit=args.role.split(","))
+        role_limit = None if args.role is None else args.role.split(",")
+        target.current().execute(role_limit=role_limit)
 
 
 def show_target(args: Namespace):
