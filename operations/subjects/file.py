@@ -1,3 +1,4 @@
+from distutils.util import execute
 import os
 import pathlib
 import platform
@@ -12,19 +13,19 @@ from caerbannog.operations import *
 MAX_DIFF_SIZE = 250
 
 
-class _PathBase(Subject):
+class _FsEntry(Subject):
     def __init__(self, path: str) -> None:
         super().__init__()
         self._path = path
 
-    def _is_file(self):
-        self.add_assertion(IsFile(self._path))
+    def _is_file(self, create_parents: bool):
+        self.add_assertion(IsFile(self, create_parents))
         if platform.system() == "Linux" and not self.has_assertion(HasOwner):
             self.has_owner(context.username(), context.groupname())
         return self
 
     def _is_directory(self, create_parents: bool):
-        self.add_assertion(IsDirectory(self._path, create_parents))
+        self.add_assertion(IsDirectory(self, create_parents))
         if platform.system() == "Linux" and not self.has_assertion(HasOwner):
             self.has_owner(context.username(), context.groupname())
         return self
@@ -33,7 +34,7 @@ class _PathBase(Subject):
         self.add_assertion(IsAbsent(self._path))
         return self
 
-    def has_owner(self, user: Union[str, None] = None, group: Union[str, None] = None):
+    def has_owner(self, user: Optional[str] = None, group: Optional[str] = None):
         self.remove_assertions(HasOwner)
 
         self.add_assertion(HasOwner(self._path, user, group))
@@ -51,12 +52,16 @@ class _PathBase(Subject):
         return f"path {fmt.code(self._path)}"
 
 
-class File(_PathBase):
+class File(_FsEntry):
     def __init__(self, path: str):
         super().__init__(path)
 
-    def is_present(self):
-        self._is_file()
+    def is_present(self, parents=True):
+        """
+        Assert that this file is present. If `parents` is `True`, also
+        recursively create all nonexistent parent directories.
+        """
+        self._is_file(create_parents=parents)
         return self
 
     def has_template(self, *path: str):
@@ -75,7 +80,7 @@ class File(_PathBase):
 
         return self.has_content(content)
 
-    def has_lines(self, *lines: str, end: Union[str, None] = None, final_newline=True):
+    def has_lines(self, *lines: str, end: Optional[str] = None, final_newline=True):
         if end is None:
             end = os.linesep
 
@@ -86,7 +91,7 @@ class File(_PathBase):
         return self.has_content(joined)
 
     def has_content(self, content: Union[str, bytes]):
-        self._is_file()
+        self._is_file(create_parents=False)
         if type(content) is str:
             self.add_assertion(HasContent(self._path, content))
         elif type(content) is bytes:
@@ -97,27 +102,41 @@ class File(_PathBase):
         return File(self._path)
 
 
-class Directory(_PathBase):
+class Directory(_FsEntry):
     def __init__(self, path: str) -> None:
         super().__init__(path)
 
     def is_present(self, parents=True):
         """
-        Assert that this directory is present. If `parents` is `Tre`, also
+        Assert that this directory is present. If `parents` is `True`, also
         recursively create all nonexistent parent directories.
         """
         self._is_directory(create_parents=parents)
         return self
-
+    
     def clone(self) -> Self:
         return Directory(self._path)
 
 
 class IsDirectory(Assertion):
-    def __init__(self, path: str, create_parents: bool):
+    def __init__(self, entry: _FsEntry, create_parents: bool):
         super().__init__("is directory")
-        self._path = path
+        self._entry = entry
+        self._path = entry._path
         self._create_parents = create_parents
+
+    def prepare(self):
+        if not self._create_parents:
+            return
+
+        parent_path = pathlib.Path(self._path).parent
+        if not parent_path.exists():
+            parent = Directory(str(parent_path)).is_present(parents=True).annotate(f"parent directory {fmt.code(str(parent_path))}")
+            has_mode = self._entry.get_assertion(HasMode)
+            if has_mode is not None:
+                parent.has_mode(has_mode._mode)
+
+            self._entry.add_child(parent)
 
     def apply(self, log: LogContext):
         if os.path.isdir(self._path):
@@ -128,20 +147,37 @@ class IsDirectory(Assertion):
                 os.remove(self._path)
             self.register_change(FileRemoved())
 
-        # TODO: Parents should be created with appropriate mode and ownership.
-        parent_absent = not pathlib.Path(self._path).parent.exists()
         if context.should_modify():
-            pathlib.Path(self._path).mkdir(parents=self._create_parents)
-        # It probably makes more sense to emit one change per directory here.
-        self.register_change(DirectoryCreated(parent_absent and self._create_parents))
+            pathlib.Path(self._path).mkdir()
+        self.register_change(DirectoryCreated())
 
         self._display(log)
 
 
 class IsFile(Assertion):
-    def __init__(self, path: str):
+    def __init__(self, entry: _FsEntry, create_parents: bool):
         super().__init__("is file")
-        self._path = path
+        self._entry = entry
+        self._path = entry._path
+        self._create_parents = create_parents
+
+    def prepare(self):
+        if not self._create_parents:
+            return
+
+        def _to_dir_mode(file_mode: int):
+            read_bits = file_mode & 0o0444
+            execute_bits = read_bits >> 2
+            return file_mode | execute_bits
+
+        parent_path = pathlib.Path(self._path).parent
+        if not parent_path.exists():
+            parent = Directory(str(parent_path)).is_present(parents=True).annotate(f"parent directory {fmt.code(str(parent_path))}")
+            has_mode = self._entry.get_assertion(HasMode)
+            if has_mode is not None:
+                parent.has_mode(_to_dir_mode(has_mode._mode))
+
+            self._entry.add_child(parent)
 
     def apply(self, log: LogContext):
         if os.path.isfile(self._path):
@@ -181,7 +217,7 @@ class IsAbsent(Assertion):
 
 class HasOwner(Assertion):
     def __init__(
-        self, path: str, user: Union[str, None], group: Union[str, None]
+        self, path: str, user: Optional[str], group: Optional[str]
     ) -> None:
         user_descr = f"user={user}" if user else ""
         group_descr = f"group={group}" if group else ""
@@ -331,9 +367,9 @@ class FileCreated(Change):
 
 
 class DirectoryCreated(Change):
-    def __init__(self, with_parent: bool):
+    def __init__(self):
         super().__init__(
-            "directory created" + (" with parent(s)" if with_parent else "")
+            "directory created"
         )
 
 

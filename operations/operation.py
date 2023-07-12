@@ -5,11 +5,14 @@ from typing import (
     Callable,
     Iterable,
     List,
+    Optional,
     Sequence,
     Tuple,
     Type,
+    TypeVar,
     Union,
     Self,
+    cast,
 )
 
 from caerbannog import context
@@ -87,6 +90,9 @@ class Subject(ABC):
         with log.level():
             log.no_change(self.get_description())
 
+            for assertion in self._assertions:
+                assertion.prepare()
+
             for child in self._children:
                 child.apply(log)
 
@@ -99,10 +105,21 @@ class Subject(ABC):
         )
 
     def add_assertion(self, assertion: "Assertion"):
+        existing = self.get_assertion(type(assertion))
+        if existing is not None:
+            self._assertions.remove(existing)
         self._assertions.append(assertion)
 
     def has_assertion(self, t: Type):
         return any(filter(lambda a: type(a) == t, self._assertions))
+
+    T = TypeVar("T")
+    def get_assertion(self, t: Type[T]) -> Optional[T]:
+        matching_assertions = list(filter(lambda a: type(a) == t, self._assertions))
+        if len(matching_assertions) == 0:
+            return None
+        return cast(t, matching_assertions[0])
+
 
     def remove_assertions(self, t: Type):
         self._assertions = list(filter(lambda a: type(a) != t, self._assertions))
@@ -163,6 +180,9 @@ class Assertion(ABC):
     @abstractmethod
     def apply(self, log: LogContext):
         raise NotImplementedError("Assertion.apply()")
+
+    def prepare(self):
+        return
 
     def _display(self, log: LogContext):
         with log.level():

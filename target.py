@@ -1,5 +1,5 @@
 from importlib import import_module
-from typing import Dict, Iterator, List, Union
+from typing import Dict, Iterator, List, Optional
 
 from caerbannog import context
 from caerbannog.logging import *
@@ -62,7 +62,7 @@ class TargetDescriptor:
             [_targets[t].includes(name) for t in self._requires]
         )
 
-    def execute(self, role_limit: Union[None, List[str]] = None):
+    def execute(self, role_limit: Optional[List[str]] = None):
         for req in self._requires:
             logger.info(f"Target {fmt.target(self._name)} requires {fmt.target(req)}")
             _targets[req].execute(role_limit=role_limit)
