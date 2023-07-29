@@ -1,7 +1,6 @@
 from distutils.util import execute
 import os
 import pathlib
-import platform
 import shutil
 import difflib
 from typing import Sequence, Union
@@ -20,13 +19,13 @@ class _FsEntry(Subject):
 
     def _is_file(self, create_parents: bool):
         self.add_assertion(IsFile(self, create_parents))
-        if platform.system() == "Linux" and not self.has_assertion(HasOwner):
+        if host.is_linux() and not self.has_assertion(HasOwner):
             self.has_owner(context.username(), context.groupname())
         return self
 
     def _is_directory(self, create_parents: bool):
         self.add_assertion(IsDirectory(self, create_parents))
-        if platform.system() == "Linux" and not self.has_assertion(HasOwner):
+        if host.is_linux() and not self.has_assertion(HasOwner):
             self.has_owner(context.username(), context.groupname())
         return self
 
@@ -113,7 +112,7 @@ class Directory(_FsEntry):
         """
         self._is_directory(create_parents=parents)
         return self
-    
+
     def clone(self) -> Self:
         return Directory(self._path)
 
@@ -131,7 +130,11 @@ class IsDirectory(Assertion):
 
         parent_path = pathlib.Path(self._path).parent
         if not parent_path.exists():
-            parent = Directory(str(parent_path)).is_present(parents=True).annotate(f"parent directory {fmt.code(str(parent_path))}")
+            parent = (
+                Directory(str(parent_path))
+                .is_present(parents=True)
+                .annotate(f"parent directory {fmt.code(str(parent_path))}")
+            )
             has_mode = self._entry.get_assertion(HasMode)
             if has_mode is not None:
                 parent.has_mode(has_mode._mode)
@@ -172,7 +175,11 @@ class IsFile(Assertion):
 
         parent_path = pathlib.Path(self._path).parent
         if not parent_path.exists():
-            parent = Directory(str(parent_path)).is_present(parents=True).annotate(f"parent directory {fmt.code(str(parent_path))}")
+            parent = (
+                Directory(str(parent_path))
+                .is_present(parents=True)
+                .annotate(f"parent directory {fmt.code(str(parent_path))}")
+            )
             has_mode = self._entry.get_assertion(HasMode)
             if has_mode is not None:
                 parent.has_mode(_to_dir_mode(has_mode._mode))
@@ -216,9 +223,7 @@ class IsAbsent(Assertion):
 
 
 class HasOwner(Assertion):
-    def __init__(
-        self, path: str, user: Optional[str], group: Optional[str]
-    ) -> None:
+    def __init__(self, path: str, user: Optional[str], group: Optional[str]) -> None:
         user_descr = f"user={user}" if user else ""
         group_descr = f"group={group}" if group else ""
 
@@ -368,9 +373,7 @@ class FileCreated(Change):
 
 class DirectoryCreated(Change):
     def __init__(self):
-        super().__init__(
-            "directory created"
-        )
+        super().__init__("directory created")
 
 
 class DirectoryRemoved(Change):

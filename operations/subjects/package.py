@@ -1,4 +1,3 @@
-import platform
 import subprocess
 from typing import Dict, Set
 
@@ -13,7 +12,7 @@ class Package(Subject):
         self._names = list(names)
 
     def is_installed(self):
-        if platform.freedesktop_os_release()["NAME"] != "Arch Linux":
+        if not host.is_arch_linux():
             raise NotImplementedError()
 
         self.add_assertion(IsInstalled(self._names))

@@ -1,12 +1,11 @@
-import platform
 import subprocess
-
-if platform.system() == "Linux":
-    import grp
 
 from caerbannog import context, command
 from caerbannog.operations import *
 from caerbannog.logging import *
+
+if host.is_linux():
+    import grp
 
 
 class Group(Subject):
@@ -15,7 +14,7 @@ class Group(Subject):
         self._name = name
 
     def is_present(self):
-        if platform.system() != "Linux":
+        if not host.is_linux():
             raise NotImplementedError()
 
         self.add_assertion(IsPresent(self._name))
