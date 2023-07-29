@@ -1,9 +1,10 @@
 from argparse import ArgumentParser
+from typing import Optional
 
 from . import subcommands
 
 
-def parse():
+def parse(dot_target: Optional[str]):
     parser = ArgumentParser(
         description="Configure a local system with Caerbannog.",
     )
@@ -11,9 +12,21 @@ def parse():
     subparsers = parser.add_subparsers(metavar="action")
 
     apply = subparsers.add_parser(
-        "apply", description="Apply a target to the system.", help="Apply a target to the system"
+        "apply",
+        description="Apply a target to the system.",
+        help="Apply a target to the system",
     )
-    apply.add_argument("target", type=str, help="Name of the target to apply")
+
+    if dot_target is None:
+        apply.add_argument("target", type=str, help="Name of the target to apply")
+    else:
+        apply.add_argument(
+            "target",
+            type=str,
+            nargs="?",
+            default=dot_target,
+            help="Name of the target to apply",
+        )
 
     apply.add_argument(
         "--elevate", action="store_true", help="Run as a privileged process"

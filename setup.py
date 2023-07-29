@@ -1,11 +1,20 @@
 import subprocess
-from typing import List
+from typing import List, Optional
 from caerbannog import plugin, password, command
 from caerbannog.commandline import args
 
 
 def commit():
-    args.parse()
+    target = _load_target()
+    args.parse(target)
+
+
+def _load_target() -> Optional[str]:
+    try:
+        with open(".target", "r", encoding="utf-8") as f:
+            return f.read()
+    except:
+        return None
 
 
 class Setup:
