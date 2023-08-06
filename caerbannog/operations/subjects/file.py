@@ -54,19 +54,19 @@ class File(_FsEntry):
     def __init__(self, path: str):
         super().__init__(path)
 
-    def is_present(self, parents=True):
+    def is_present(self, create_parents=True):
         """
         Assert that this file is present. If `parents` is `True`, also
         recursively create all nonexistent parent directories.
         """
-        self._is_file(create_parents=parents)
+        self._is_file(create_parents=create_parents)
         return self
 
-    def has_template(self, path: str):
+    def has_template(self, path: str, create_parents=False):
         content = template.render(path)
-        return self.has_content(content)
+        return self.has_content(content, create_parents=create_parents)
 
-    def has_content_from(self, path: str):
+    def has_content_from(self, path: str, create_parents=False):
         full_path = context.resolve_path(path)
 
         try:
@@ -76,9 +76,9 @@ class File(_FsEntry):
             with open(full_path, "rb") as file:
                 content = file.read()
 
-        return self.has_content(content)
+        return self.has_content(content, create_parents=create_parents)
 
-    def has_lines(self, *lines: str, end: Optional[str] = None, final_newline=True):
+    def has_lines(self, *lines: str, end: Optional[str] = None, final_newline=True, create_parents=False):
         if end is None:
             end = os.linesep
 
@@ -86,10 +86,10 @@ class File(_FsEntry):
         if final_newline:
             joined += os.linesep
 
-        return self.has_content(joined)
+        return self.has_content(joined, create_parents=create_parents)
 
-    def has_content(self, content: Union[str, bytes]):
-        self._is_file(create_parents=False)
+    def has_content(self, content: Union[str, bytes], create_parents=False):
+        self._is_file(create_parents=create_parents)
         if type(content) is str:
             self.add_assertion(HasContent(self._path, content))
         elif type(content) is bytes:
@@ -104,12 +104,12 @@ class Directory(_FsEntry):
     def __init__(self, path: str) -> None:
         super().__init__(path)
 
-    def is_present(self, parents=True):
+    def is_present(self, create_parents=True):
         """
         Assert that this directory is present. If `parents` is `True`, also
         recursively create all nonexistent parent directories.
         """
-        self._is_directory(create_parents=parents)
+        self._is_directory(create_parents=create_parents)
         return self
 
     def clone(self) -> Self:
@@ -131,7 +131,7 @@ class IsDirectory(Assertion):
         if not parent_path.exists():
             parent = (
                 Directory(str(parent_path))
-                .is_present(parents=True)
+                .is_present(create_parents=True)
                 .annotate(f"parent directory {fmt.code(str(parent_path))}")
             )
             has_mode = self._entry.get_assertion(HasMode)
@@ -176,7 +176,7 @@ class IsFile(Assertion):
         if not parent_path.exists():
             parent = (
                 Directory(str(parent_path))
-                .is_present(parents=True)
+                .is_present(create_parents=True)
                 .annotate(f"parent directory {fmt.code(str(parent_path))}")
             )
             has_mode = self._entry.get_assertion(HasMode)
