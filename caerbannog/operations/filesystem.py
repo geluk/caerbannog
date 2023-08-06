@@ -4,14 +4,14 @@ from caerbannog import context
 
 
 def local_app_data(*subpath: str):
-    local = os.getenv("LOCALAPPDATA")
+    local = context.env().get("LOCALAPPDATA", None)
     if local is None:
-        raise Exception("%APPDATA% not found")
+        raise Exception("%LOCALAPPDATA% not found")
     return append_subpath(local, *subpath)
 
 
 def roaming_app_data(*subpath: str):
-    appdata = os.getenv("APPDATA")
+    appdata = context.env().get("APPDATA", None)
     if appdata is None:
         raise Exception("%APPDATA% not found")
     return append_subpath(appdata, *subpath)
