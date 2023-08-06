@@ -1,7 +1,10 @@
+import argcomplete
+
 from argparse import ArgumentParser
 from typing import Optional
 
 from . import subcommands
+from .. import target
 
 
 def parse(dot_target: Optional[str]):
@@ -17,12 +20,14 @@ def parse(dot_target: Optional[str]):
         help="Apply a target to the system",
     )
 
+    valid_targets = [t.name() for t in target.all()]
     if dot_target is None:
-        apply.add_argument("target", type=str, help="Name of the target to apply")
+        apply.add_argument("target", choices=valid_targets, help="Name of the target to apply")
     else:
         apply.add_argument(
             "target",
-            type=str,
+            choices=valid_targets,
+            metavar="TARGET",
             nargs="?",
             default=dot_target,
             help="Name of the target to apply",
@@ -56,14 +61,14 @@ def parse(dot_target: Optional[str]):
 
     apply.set_defaults(func=subcommands.configure)
 
-    target = subparsers.add_parser(
+    tgt = subparsers.add_parser(
         "target",
         description="List available targets.",
         help="List available targets",
     )
-    target.add_argument("target", default=None, nargs="?")
+    tgt.add_argument("target", default=None, nargs="?")
 
-    target.set_defaults(func=subcommands.show_target)
+    tgt.set_defaults(func=subcommands.show_target)
 
     encrypt = subparsers.add_parser(
         "encrypt", description="Encrypt a secret.", help="Encrypt a secret"
@@ -88,6 +93,7 @@ def parse(dot_target: Optional[str]):
     view.add_argument("file", type=str)
     view.set_defaults(func=subcommands.view)
 
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     if "func" not in args:
