@@ -16,16 +16,12 @@ def apply_role(role: str):
         try:
             module = import_module(module_name)
         except Exception as e:
-            logger.error(f"Failed to import role", e)
+            logger.error(f"Failed to import role '{role}'", e)
             return
 
         with context.role(role, log_ctx) as role_ctx:
             try:
-                result = module.configure()
-
-                if type(result) is list:
-                    Do(*result)
-
+                module.configure()
                 role_ctx.run_handlers()
 
             except Exception as e:
