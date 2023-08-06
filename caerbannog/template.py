@@ -1,7 +1,9 @@
 import os
+import traceback
 from caerbannog import context, target
+from caerbannog.error import CaerbannogError
 
-from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, UndefinedError
 
 
 def _join_paths(paths, separator):
@@ -31,4 +33,10 @@ def render(*path: str):
     joined = _join_paths(path, None)
 
     template = env.get_template(joined)
-    return template.render(context.context())
+    try:
+        return template.render(context.context())
+    except UndefinedError as e:
+        # This is a little dubious, but if it ever fails, we'll find out soon enough.
+        TEMPLATE_FRAME_OFFSET = 3
+        frame = traceback.extract_tb(e.__traceback__)[TEMPLATE_FRAME_OFFSET]
+        raise CaerbannogError.from_frame(f"Error rendering '{joined}': {e.message}", frame)
