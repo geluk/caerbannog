@@ -1,7 +1,9 @@
 import os
 import traceback
+import inspect
 from caerbannog import context, target
 from caerbannog.error import CaerbannogError
+from caerbannog.operations import filesystem
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, UndefinedError
 
@@ -19,6 +21,12 @@ def _create_environment() -> Environment:
     env = Environment()
     env.filters["join_path"] = _join_paths
     env.globals["is_targeted"] = target.is_targeted
+
+    for name, f in inspect.getmembers(
+        filesystem, lambda f: inspect.isfunction(f) and not f.__name__.startswith("_")
+    ):
+        print(f"add global: {name}")
+        env.globals[name] = f
 
     env.undefined = StrictUndefined
 
@@ -47,4 +55,6 @@ def render(*path: str):
         # This is a little dubious, but if it ever fails, we'll find out soon enough.
         TEMPLATE_FRAME_OFFSET = 3
         frame = traceback.extract_tb(e.__traceback__)[TEMPLATE_FRAME_OFFSET]
-        raise CaerbannogError.from_frame(f"Error rendering '{joined}': {e.message}", frame)
+        raise CaerbannogError.from_frame(
+            f"Error rendering '{joined}': {e.message}", frame
+        )
