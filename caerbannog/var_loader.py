@@ -1,6 +1,6 @@
 import os
 from os import DirEntry
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 import yaml
 
 from caerbannog import secrets, password, target
@@ -9,7 +9,7 @@ from caerbannog import secrets, password, target
 def load_all():
     all_vars = load_vars("vars", "all")
 
-    targets = _get_targets_breadth_first(target.current())
+    targets = _get_targets_depth_first(target.current())
 
     for tgt in targets:
         all_vars |= load_vars("vars/targets", tgt.name())
@@ -38,18 +38,30 @@ def load_vars(directory, key) -> Dict[str, Any]:
     return vars
 
 
-def _get_targets_breadth_first(target: "target.TargetDescriptor"):
-    results: List[target.TargetDescriptor] = []
-    queue: List[target.TargetDescriptor] = []
+def _get_targets_depth_first(target: "target.TargetDescriptor") -> List["target.TargetDescriptor"]:
 
-    queue.append(target)
+    known_targets: Dict["target.TargetDescriptor", int] = dict()
 
-    while len(queue) > 0:
-        current = queue.pop(0)
-        results.append(current)
-        queue.extend(current.dependencies())
+    def add(target: "target.TargetDescriptor", depth):
+        existing_depth = known_targets.get(target)
+        if existing_depth is None:
+            known_targets[target] = depth
+        else:
+            known_targets[target] = min(existing_depth, depth)
 
-    return results
+    def recurse(target: "target.TargetDescriptor", depth):
+        add(target, depth)
+        for dependency in target.dependencies():
+            recurse(dependency, depth + 1)
+
+    recurse(target, 0)
+
+    def sort_depth_first_then_name(pair: Tuple["target.TargetDescriptor", int]):
+        target, depth = pair
+        return (-depth, target.name())
+    
+    sorted_targets = sorted(known_targets.items(), key=sort_depth_first_then_name)
+    return [tgt for tgt, _ in sorted_targets]
 
 
 def _is_vars_file(entry: DirEntry[str]) -> bool:
