@@ -1,6 +1,6 @@
 import os
-import pathlib
 from typing import Iterator, List, Self, Tuple
+from pathlib import Path
 
 from caerbannog.logging import *
 from caerbannog import context
@@ -56,14 +56,17 @@ class IsReplicatedTo(Assertion):
         self._subjects: List[Subject] = list(self._generate_subjects())
 
     def _generate_subjects(self) -> Iterator[Subject]:
-        expected_files: List[pathlib.Path] = []
-        expected_dirs: List[pathlib.Path] = []
+        expected_files: List[Path] = []
+        expected_dirs: List[Path] = []
+
+        if not Path(self._file_tree._resolved_source).exists():
+            raise Exception(f"Source path '{self._file_tree._resolved_source}' does not exist")
 
         if not self._children_only:
-            expected_dirs.append(pathlib.Path(self._destination))
+            expected_dirs.append(Path(self._destination))
 
         for dst_dir, files in self._iterate_required_files():
-            expected_dirs.append(pathlib.Path(dst_dir))
+            expected_dirs.append(Path(dst_dir))
 
             yield Directory(dst_dir).is_present()
 
@@ -74,7 +77,7 @@ class IsReplicatedTo(Assertion):
                 else:
                     yield File(dst_file).has_content_from(str(rel_src_file))
 
-                expected_files.append(pathlib.Path(dst_file))
+                expected_files.append(Path(dst_file))
 
         if not self._exclusive:
             return
@@ -92,11 +95,11 @@ class IsReplicatedTo(Assertion):
     def _iterate_required_files(self) -> Iterator[Tuple[str, List[Tuple[str, str]]]]:
         role_dir = context.current_role_dir()
         for abs_src_dir, _, file_names in os.walk(self._file_tree._resolved_source):
-            rel_src_dir = str(pathlib.Path(abs_src_dir).relative_to(role_dir))
+            rel_src_dir = str(Path(abs_src_dir).relative_to(role_dir))
             dst_dir = self._map_forward(rel_src_dir)
 
             rel_src_files = [
-                str(pathlib.Path(rel_src_dir, file_name)) for file_name in file_names
+                str(Path(rel_src_dir, file_name)) for file_name in file_names
             ]
             dst_files = [
                 self._map_forward(rel_src_file) for rel_src_file in rel_src_files
@@ -107,19 +110,19 @@ class IsReplicatedTo(Assertion):
 
     def _iterate_present_files(
         self,
-    ) -> Iterator[Tuple[pathlib.Path, List[pathlib.Path]]]:
+    ) -> Iterator[Tuple[Path, List[Path]]]:
         iterator = os.walk(self._destination)
 
         for present_dir, _, present_filenames in iterator:
             present_files = [
-                pathlib.Path(present_dir, filename) for filename in present_filenames
+                Path(present_dir, filename) for filename in present_filenames
             ]
-            yield pathlib.Path(present_dir), present_files
+            yield Path(present_dir), present_files
 
     def _map_forward(self, rel_src: str) -> str:
         if self._children_only:
             rel_src = _remove_base_dir(rel_src)
-        return str(pathlib.Path(self._destination, rel_src))
+        return str(Path(self._destination, rel_src))
 
     def apply(self, log: LogContext):
         with log.level():
@@ -129,4 +132,4 @@ class IsReplicatedTo(Assertion):
 
 
 def _remove_base_dir(path: str):
-    return str(pathlib.Path(*pathlib.Path(path).parts[1:]))
+    return str(Path(*Path(path).parts[1:]))
