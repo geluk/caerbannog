@@ -1,25 +1,31 @@
-from typing import Callable
+import subprocess
+from typing import Callable, List
 import getpass
+from caerbannog import command, context
 
 
-def _input_loader():
+def input_loader() -> str:
     return getpass.getpass("Secrets password: ")
 
 
-_password = None
-_loader: Callable[[], str] = _input_loader
+def command_loader(cmd: List[str]) -> Callable[[], str]:
+    def _command_loader():
+        result = subprocess.run(
+            command.create_user_command(*cmd),
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        return result.stdout.rstrip("\r\n")
+    return _command_loader
 
 
-def set_loader(loader: Callable[[], str]):
-    global _loader
-    _loader = loader
-
-
+_cached_password = None
 def get_password():
-    global _password
-    global _loader
+    global _cached_password
 
-    if _password is None:
-        _password = _loader()
+    if _cached_password is None:
+        loader = context.settings().password_loader()
+        _cached_password = loader()
 
-    return _password
+    return _cached_password

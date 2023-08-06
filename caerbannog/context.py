@@ -5,6 +5,8 @@ import os
 import platform
 from typing import Any, Dict
 
+from caerbannog.settings import Settings
+
 if platform.system() == "Linux":
     import grp
 
@@ -20,6 +22,7 @@ _context: Dict[str, Any] = {
     "elevation": str(ElevationType.NONE),
 }
 _role_context = None
+_settings = None
 
 _should_modify = True
 
@@ -146,6 +149,12 @@ def role_vars():
 
 def system():
     return _context["host"]["system"]
+
+
+def settings() -> Settings:
+    if _settings is None:
+        raise Exception("Settings are not available yet")
+    return _settings
 
 
 def role_context() -> RoleContext:

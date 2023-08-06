@@ -4,7 +4,7 @@ import subprocess
 import sys
 from typing import List
 
-from caerbannog import context, secrets, password, plugin, target
+from caerbannog import context, secrets, password, target
 
 
 def configure(args: Namespace):
