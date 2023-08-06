@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "caerbannog"
+version = "0.1.0"
+description = "Local system provisioning for mortals"
+authors = ["Johan Geluk <johan@geluk.io>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Jinja2 = "^3.1.2"
+fonttools = "^4.42.0"
+PyYAML = "^6.0.1"
+pycryptodomex = "^3.18.0"
+argcomplete = "^3.1.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+types-PyYAML = "^6.0.12.11"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
