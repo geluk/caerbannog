@@ -1,4 +1,3 @@
-from distutils.util import execute
 import os
 import pathlib
 import shutil
@@ -63,12 +62,12 @@ class File(_FsEntry):
         self._is_file(create_parents=parents)
         return self
 
-    def has_template(self, *path: str):
-        content = template.render(*path)
+    def has_template(self, path: str):
+        content = template.render(path)
         return self.has_content(content)
 
-    def has_content_from(self, *content_path):
-        full_path = context.resolve_path(*content_path)
+    def has_content_from(self, path: str):
+        full_path = context.resolve_path(path)
 
         try:
             with open(full_path, "r", encoding="utf-8") as file:
