@@ -17,8 +17,8 @@ def _load_target() -> Optional[str]:
         return None
 
 
-class Setup:
-    def use_password_plugin(self, name: str) -> "Setup":
+class Settings:
+    def use_password_plugin(self, name: str) -> "Settings":
         password_plugin = plugin.load_plugin(name)
         password.set_loader(password_plugin.get_password)
 
@@ -41,8 +41,8 @@ class Setup:
         plugin.load_plugin(name)
 
 
-_setup = Setup()
+_setup = Settings()
 
 
-def setup() -> Setup:
+def setup() -> Settings:
     return _setup
