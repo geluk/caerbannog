@@ -12,7 +12,7 @@ def commit():
 def _load_target() -> Optional[str]:
     try:
         with open(".target", "r", encoding="utf-8") as f:
-            return f.read()
+            return f.read().strip()
     except:
         return None
 
