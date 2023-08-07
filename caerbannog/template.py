@@ -10,8 +10,11 @@ from caerbannog.error import CaerbannogError
 from caerbannog.operations import filesystem
 
 
-def _join_paths(paths, separator):
-    joined = os.path.join(*paths)
+def _join_paths(paths, separator) -> str:
+    if type(paths) == str:
+        joined = os.path.join(paths)
+    else:
+        joined = os.path.join(*paths)
 
     if separator is not None:
         return joined.replace(os.sep, separator)
