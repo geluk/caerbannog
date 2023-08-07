@@ -1,4 +1,4 @@
-from .file import Directory, File
+from .file import Directory, File, Symlink
 from .file_tree import FileTree
 from .font import Font
 from .group import Group
