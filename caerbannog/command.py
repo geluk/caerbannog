@@ -1,14 +1,7 @@
-import enum
-from enum import StrEnum
 from typing import List
 
-import caerbannog.context as context
-
-
-class ElevationType(StrEnum):
-    NONE = enum.auto()
-    JUST_IN_TIME = enum.auto()
-    ELEVATED = enum.auto()
+from caerbannog import context
+from caerbannog.elevation_type import ElevationType
 
 
 def create_elevated_command(*args: str) -> List[str]:

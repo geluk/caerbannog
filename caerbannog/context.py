@@ -15,7 +15,7 @@ if platform.system() == "Linux":
     import grp
 
 from caerbannog import var_loader
-from caerbannog.command import ElevationType
+from caerbannog.elevation_type import ElevationType
 from caerbannog.roles.role_context import RoleContext
 
 _context: Dict[str, Any] = {
@@ -92,7 +92,7 @@ def context():
     return _context
 
 
-def elevation() -> ElevationType:
+def elevation() -> "ElevationType":
     return ElevationType(_context["elevation"])
 
 
