@@ -126,6 +126,22 @@ class Directory(_FsEntry):
         return Directory(self._path)
 
 
+class Symlink(Subject):
+    def __init__(self, path: str) -> None:
+        super().__init__()
+        self._path = path
+
+    def has_target(self, target: str, create_parents=False) -> Self:
+        self.add_assertion(IsSymlink(self, target, create_parents))
+        return self
+
+    def clone(self) -> Self:
+        return Symlink(self._path)
+
+    def describe(self):
+        return f"path {fmt.code(self._path)}"
+
+
 class IsDirectory(Assertion):
     def __init__(self, entry: _FsEntry, create_parents: bool):
         super().__init__("is directory")
@@ -154,10 +170,16 @@ class IsDirectory(Assertion):
         if os.path.isdir(self._path):
             self._display_passed(log)
             return
-        if os.path.exists(self._path):
+        elif os.path.isfile(self._path):
             if context.should_modify():
                 os.remove(self._path)
             self.register_change(FileRemoved())
+        elif os.path.islink(self._path):
+            if context.should_modify():
+                os.remove(self._path)
+            self.register_change(SymlinkRemoved())
+        elif os.path.exists(self._path):
+            raise Exception(f"'{self._path}' is not a file, directory or symlink")
 
         if context.should_modify():
             pathlib.Path(self._path).mkdir()
@@ -199,15 +221,70 @@ class IsFile(Assertion):
         if os.path.isfile(self._path):
             self._display_passed(log)
             return
-        if os.path.exists(self._path):
+        elif os.path.isdir(self._path):
             if context.should_modify():
                 shutil.rmtree(self._path)
             self.register_change(DirectoryRemoved())
+        elif os.path.islink(self._path):
+            if context.should_modify():
+                os.remove(self._path)
+            self.register_change(SymlinkRemoved())
+        elif os.path.exists(self._path):
+            raise Exception(f"'{self._path}' is not a file, directory or symlink")
 
         if context.should_modify():
             with open(self._path, "w"):
                 pass
             self.register_change(FileCreated())
+
+        self._display_changed(log)
+
+
+class IsSymlink(Assertion):
+    def __init__(self, symlink: Symlink, target: str, create_parents: bool):
+        super().__init__(f"is symlink to {fmt.code(target)}")
+        self._path = symlink._path
+        self._symlink = symlink
+        self._target = target
+        self._create_parents = create_parents
+
+    def prepare(self):
+        if not self._create_parents:
+            return
+
+        parent_path = pathlib.Path(self._path).parent
+        if not parent_path.exists():
+            parent = (
+                Directory(str(parent_path))
+                .is_present(create_parents=True)
+                .annotate(f"parent directory {fmt.code(str(parent_path))}")
+            )
+            self._symlink.add_child(parent)
+
+    def apply(self, log: LogContext):
+        if os.path.islink(self._path):
+            old_target = os.readlink(self._path)
+            if old_target == self._target:
+                self._display_passed(log)
+                return
+            if context.should_modify():
+                os.remove(self._path)
+                os.symlink(self._target, self._path)
+            self.register_change(SymlinkChanged(old_target, self._target))
+        elif os.path.isdir(self._path):
+            if context.should_modify():
+                shutil.rmtree(self._path)
+            self.register_change(DirectoryRemoved())
+        elif os.path.isfile(self._path):
+            if context.should_modify():
+                os.remove(self._path)
+            self.register_change(FileRemoved())
+        elif os.path.exists(self._path):
+            raise Exception(f"'{self._path}' is not a file, directory or symlink")
+        else:
+            if context.should_modify():
+                os.symlink(self._target, self._path)
+                self.register_change(SymlinkCreated())
 
         self._display_changed(log)
 
@@ -222,11 +299,16 @@ class IsAbsent(Assertion):
             if context.should_modify():
                 shutil.rmtree(self._path)
             self.register_change(DirectoryRemoved())
-
-        elif os.path.exists(self._path):
+        elif os.path.isfile(self._path):
             if context.should_modify():
                 os.remove(self._path)
             self.register_change(FileRemoved())
+        elif os.path.islink(self._path):
+            if context.should_modify():
+                os.remove(self._path)
+            self.register_change(SymlinkRemoved())
+        elif os.path.exists(self._path):
+            raise Exception(f"'{self._path}' is not a file, directory or symlink")
 
         self._display(log)
 
@@ -385,6 +467,11 @@ class DirectoryCreated(Change):
         super().__init__("directory created")
 
 
+class SymlinkCreated(Change):
+    def __init__(self):
+        super().__init__("symlink created")
+
+
 class DirectoryRemoved(Change):
     def __init__(self):
         super().__init__("directory removed")
@@ -393,6 +480,19 @@ class DirectoryRemoved(Change):
 class FileRemoved(Change):
     def __init__(self):
         super().__init__("file removed")
+
+
+class SymlinkRemoved(Change):
+    def __init__(self):
+        super().__init__("symlink removed")
+
+
+class SymlinkChanged(Change):
+    def __init__(self, old_target: str, new_target: str):
+        super().__init__(
+            "symlink changed",
+            [DiffLine.remove(f"{old_target}"), DiffLine.add(f"{new_target}")],
+        )
 
 
 class ContentChangedSummary(Change):
