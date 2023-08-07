@@ -1,6 +1,7 @@
 import inspect
 import os
 import traceback
+from typing import Any, Dict, Optional
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, UndefinedError
 
@@ -43,12 +44,15 @@ def _create_environment() -> Environment:
     return env
 
 
-def render(*path: str):
+def render(*path: str, extra_vars: Optional[Dict[str, Any]] = None):
     env = _create_environment()
 
     joined = _join_paths(path, None)
-
     template = env.get_template(joined)
+    ctx = context.context()
+    if extra_vars is not None:
+        ctx["vars"] = ctx["vars"] | extra_vars
+
     try:
         return template.render(context.context())
     except UndefinedError as e:

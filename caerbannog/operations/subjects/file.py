@@ -2,7 +2,7 @@ import difflib
 import os
 import pathlib
 import shutil
-from typing import Sequence, Union
+from typing import Dict, Sequence, Union
 
 from caerbannog import context, template
 from caerbannog.operations import *
@@ -61,8 +61,13 @@ class File(_FsEntry):
         self._is_file(create_parents=create_parents)
         return self
 
-    def has_template(self, path: str, create_parents=False):
-        content = template.render(path)
+    def has_template(
+        self,
+        path: str,
+        create_parents=False,
+        extra_vars: Optional[Dict[str, Any]] = None,
+    ):
+        content = template.render(path, extra_vars=extra_vars)
         return self.has_content(content, create_parents=create_parents)
 
     def has_content_from(self, path: str, create_parents=False):
