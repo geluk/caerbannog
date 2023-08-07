@@ -26,7 +26,6 @@ def _create_environment() -> Environment:
     for name, f in inspect.getmembers(
         filesystem, lambda f: inspect.isfunction(f) and not f.__name__.startswith("_")
     ):
-        print(f"add global: {name}")
         env.globals[name] = f
 
     env.undefined = StrictUndefined
