@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: black
+        entry: black
+        name: black
+        require_serial: true
+        language: python
+        types: [python]
+      - id: isort
+        name: isort
+        entry: isort
+        require_serial: true
+        language: python
+        types: [python]
