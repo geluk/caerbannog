@@ -68,16 +68,16 @@ class IsReplicatedTo(Assertion):
             expected_dirs.append(Path(self._destination))
 
         for dst_dir, files in self._iterate_required_files():
-            expected_dirs.append(Path(dst_dir))
+            expected_dirs.append(dst_dir)
 
-            yield Directory(dst_dir).is_present()
+            yield Directory(str(dst_dir)).is_present()
 
             for rel_src_file, dst_file in files:
-                if rel_src_file.endswith(".j2") and self._file_tree._resolve_templates:
-                    dst_file = dst_file.removesuffix(".j2")
-                    yield File(dst_file).has_template(str(rel_src_file))
+                if rel_src_file.suffix == ".j2" and self._file_tree._resolve_templates:
+                    dst_file = dst_file.with_suffix("")
+                    yield File(str(dst_file)).has_template(str(rel_src_file))
                 else:
-                    yield File(dst_file).has_content_from(str(rel_src_file))
+                    yield File(str(dst_file)).has_content_from(str(rel_src_file))
 
                 expected_files.append(Path(dst_file))
 
@@ -94,18 +94,18 @@ class IsReplicatedTo(Assertion):
                 if present_file not in expected_files:
                     yield File(str(present_file)).is_absent()
 
-    def _iterate_required_files(self) -> Iterator[Tuple[str, List[Tuple[str, str]]]]:
-        role_dir = context.current_role_dir()
+    def _iterate_required_files(self) -> Iterator[Tuple[Path, List[Tuple[Path, Path]]]]:
+        role_dir = Path(context.current_role_dir())
+        base_dir = Path(self._file_tree._resolved_source).parent
         for abs_src_dir, _, file_names in os.walk(self._file_tree._resolved_source):
-            rel_src_dir = str(Path(abs_src_dir).relative_to(role_dir))
-            dst_dir = self._map_forward(rel_src_dir)
+            rel_base_src_dir = Path(abs_src_dir).relative_to(base_dir)
+            rel_role_src_dir = Path(abs_src_dir).relative_to(role_dir)
+            dst_dir = self._map_forward(rel_base_src_dir)
 
             rel_src_files = [
-                str(Path(rel_src_dir, file_name)) for file_name in file_names
+                Path(rel_role_src_dir, file_name) for file_name in file_names
             ]
-            dst_files = [
-                self._map_forward(rel_src_file) for rel_src_file in rel_src_files
-            ]
+            dst_files = [Path(dst_dir, file_name) for file_name in file_names]
             files = list(zip(rel_src_files, dst_files))
 
             yield dst_dir, files
@@ -121,10 +121,10 @@ class IsReplicatedTo(Assertion):
             ]
             yield Path(present_dir), present_files
 
-    def _map_forward(self, rel_src: str) -> str:
+    def _map_forward(self, rel_src: Path) -> Path:
         if self._children_only:
             rel_src = _remove_base_dir(rel_src)
-        return str(Path(self._destination, rel_src))
+        return Path(self._destination, rel_src)
 
     def apply(self, log: LogContext):
         with log.level():
@@ -133,5 +133,5 @@ class IsReplicatedTo(Assertion):
                 subject.apply(log)
 
 
-def _remove_base_dir(path: str):
-    return str(Path(*Path(path).parts[1:]))
+def _remove_base_dir(path: Path) -> Path:
+    return Path(*path.parts[1:])
