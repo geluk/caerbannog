@@ -6,12 +6,12 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Self,
     Sequence,
     Tuple,
     Type,
     TypeVar,
     Union,
-    Self,
     cast,
 )
 
@@ -114,12 +114,12 @@ class Subject(ABC):
         return any(filter(lambda a: type(a) == t, self._assertions))
 
     T = TypeVar("T")
+
     def get_assertion(self, t: Type[T]) -> Optional[T]:
         matching_assertions = list(filter(lambda a: type(a) == t, self._assertions))
         if len(matching_assertions) == 0:
             return None
         return cast(t, matching_assertions[0])
-
 
     def remove_assertions(self, t: Type):
         self._assertions = list(filter(lambda a: type(a) != t, self._assertions))

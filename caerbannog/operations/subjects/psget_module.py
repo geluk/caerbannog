@@ -1,8 +1,9 @@
 import subprocess
 from typing import Set
+
 from caerbannog import context
-from caerbannog.operations import *
 from caerbannog.logging import *
+from caerbannog.operations import *
 
 
 class PsGetModule(Subject):

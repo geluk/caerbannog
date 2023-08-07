@@ -2,8 +2,8 @@ import subprocess
 from typing import Dict, Set
 
 from caerbannog import context
-from caerbannog.operations import *
 from caerbannog.logging import *
+from caerbannog.operations import *
 
 
 class Package(Subject):

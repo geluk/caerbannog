@@ -1,12 +1,12 @@
 import os
-from typing import Iterator, List, Self, Tuple
 from pathlib import Path
+from typing import Iterator, List, Self, Tuple
 
-from caerbannog.logging import *
 from caerbannog import context
-
-from . import File, Directory
+from caerbannog.logging import *
 from caerbannog.operations import *
+
+from . import Directory, File
 
 
 class FileTree(Subject):
@@ -60,7 +60,9 @@ class IsReplicatedTo(Assertion):
         expected_dirs: List[Path] = []
 
         if not Path(self._file_tree._resolved_source).exists():
-            raise Exception(f"Source path '{self._file_tree._resolved_source}' does not exist")
+            raise Exception(
+                f"Source path '{self._file_tree._resolved_source}' does not exist"
+            )
 
         if not self._children_only:
             expected_dirs.append(Path(self._destination))

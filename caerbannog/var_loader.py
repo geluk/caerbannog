@@ -1,9 +1,10 @@
 import os
 from os import DirEntry
 from typing import Any, Dict, List, Tuple
+
 import yaml
 
-from caerbannog import secrets, password, target
+from caerbannog import password, secrets, target
 
 
 def load_all():
@@ -38,8 +39,9 @@ def load_vars(directory, key) -> Dict[str, Any]:
     return vars
 
 
-def _get_targets_depth_first(target: "target.TargetDescriptor") -> List["target.TargetDescriptor"]:
-
+def _get_targets_depth_first(
+    target: "target.TargetDescriptor",
+) -> List["target.TargetDescriptor"]:
     known_targets: Dict["target.TargetDescriptor", int] = dict()
 
     def add(target: "target.TargetDescriptor", depth):
@@ -59,7 +61,7 @@ def _get_targets_depth_first(target: "target.TargetDescriptor") -> List["target.
     def sort_depth_first_then_name(pair: Tuple["target.TargetDescriptor", int]):
         target, depth = pair
         return (-depth, target.name())
-    
+
     sorted_targets = sorted(known_targets.items(), key=sort_depth_first_then_name)
     return [tgt for tgt, _ in sorted_targets]
 

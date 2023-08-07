@@ -1,12 +1,11 @@
+import difflib
 import os
 import pathlib
 import shutil
-import difflib
 from typing import Sequence, Union
 
-from caerbannog import template, context
+from caerbannog import context, template
 from caerbannog.operations import *
-
 
 MAX_DIFF_SIZE = 250
 
@@ -78,7 +77,13 @@ class File(_FsEntry):
 
         return self.has_content(content, create_parents=create_parents)
 
-    def has_lines(self, *lines: str, end: Optional[str] = None, final_newline=True, create_parents=False):
+    def has_lines(
+        self,
+        *lines: str,
+        end: Optional[str] = None,
+        final_newline=True,
+        create_parents=False,
+    ):
         if end is None:
             end = os.linesep
 

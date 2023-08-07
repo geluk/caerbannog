@@ -1,11 +1,12 @@
+import inspect
 import os
 import traceback
-import inspect
+
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, UndefinedError
+
 from caerbannog import context, target
 from caerbannog.error import CaerbannogError
 from caerbannog.operations import filesystem
-
-from jinja2 import Environment, FileSystemLoader, StrictUndefined, UndefinedError
 
 
 def _join_paths(paths, separator):
