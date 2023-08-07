@@ -64,8 +64,12 @@ class IsReplicatedTo(Assertion):
                 f"Source path '{self._file_tree._resolved_source}' does not exist"
             )
 
+        dst_path = Path(self._destination)
+        if not dst_path.is_absolute():
+            raise Exception(f"Destination path '{dst_path}' is not absolute")
+
         if not self._children_only:
-            expected_dirs.append(Path(self._destination))
+            expected_dirs.append(dst_path)
 
         for dst_dir, files in self._iterate_required_files():
             expected_dirs.append(dst_dir)
