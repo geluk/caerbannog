@@ -1,6 +1,7 @@
+import getpass
 import subprocess
 from typing import Callable, List
-import getpass
+
 from caerbannog import command, context
 
 
@@ -17,10 +18,13 @@ def command_loader(cmd: List[str]) -> Callable[[], str]:
             check=True,
         )
         return result.stdout.rstrip("\r\n")
+
     return _command_loader
 
 
 _cached_password = None
+
+
 def get_password():
     global _cached_password
 

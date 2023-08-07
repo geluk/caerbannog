@@ -12,9 +12,12 @@ class CaerbannogError(Exception):
 
     @staticmethod
     def from_frame(message: str, frame: FrameSummary):
-        return CaerbannogError(message, ErrorContext(frame.filename, frame.line or "", frame.lineno or -1))
+        return CaerbannogError(
+            message, ErrorContext(frame.filename, frame.line or "", frame.lineno or -1)
+        )
 
-class ErrorContext():
+
+class ErrorContext:
     def __init__(self, filename: str, line: str, lineno: int) -> None:
         self._filename = filename
         self._line = line

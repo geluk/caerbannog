@@ -1,10 +1,10 @@
-from argparse import Namespace
 import json
 import subprocess
 import sys
+from argparse import Namespace
 from typing import List
 
-from caerbannog import context, secrets, password, target
+from caerbannog import context, password, secrets, target
 
 
 def configure(args: Namespace):

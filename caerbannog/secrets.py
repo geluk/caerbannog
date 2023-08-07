@@ -2,10 +2,9 @@ import base64
 import re
 from typing import Any, Dict, Tuple
 
+from Cryptodome import Random
 from Cryptodome.Cipher import AES
 from Cryptodome.Protocol import KDF
-from Cryptodome import Random
-
 
 SCRYPT_SALT_SIZE = 32
 

@@ -1,12 +1,13 @@
 from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, cast
-from caerbannog import plugin, password, context
+
+from caerbannog import context, password, plugin
 from caerbannog.commandline import args
 
 
 def commit():
     target = _load_target()
-    
+
     settings = _settings_builder._build()
     context._settings = settings
 
@@ -68,7 +69,9 @@ class SettingsBuilder:
             password_plugin = plugin.load_plugin(cast(str, self._password_loader))
             password_loader = password_plugin.get_password
         else:
-            password_loader = password.command_loader(cast(List[str], self._password_loader))
+            password_loader = password.command_loader(
+                cast(List[str], self._password_loader)
+            )
 
         plugins = {n: plugin.load_plugin(n) for n in self._plugins}
 
@@ -80,5 +83,7 @@ class SettingsBuilder:
 
 
 _settings_builder = SettingsBuilder()
+
+
 def setup() -> SettingsBuilder:
     return _settings_builder

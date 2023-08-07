@@ -1,8 +1,8 @@
 import subprocess
 
-from caerbannog import context, command
-from caerbannog.operations import *
+from caerbannog import command, context
 from caerbannog.logging import *
+from caerbannog.operations import *
 
 if host.is_linux():
     import grp

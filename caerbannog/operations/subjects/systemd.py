@@ -1,11 +1,12 @@
 import subprocess
-from typing import Callable
 from enum import StrEnum, auto
+from typing import Callable
 
 from caerbannog import command
+from caerbannog.logging import *
 from caerbannog.operations import *
 from caerbannog.operations import filesystem
-from caerbannog.logging import *
+
 from . import File
 
 

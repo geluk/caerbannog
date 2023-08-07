@@ -1,11 +1,15 @@
 import argparse
-from contextlib import contextmanager
 import json
 import os
 import platform
-from typing import Any, Dict
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Dict
 
-from caerbannog.settings import Settings
+if TYPE_CHECKING:
+    # The context and settings modules form a circular dependency. The settings module
+    # is only used for a type annotation in this module, so we let the type checkers
+    # deal with the circular dependency, while during normal runtime it will not exist.
+    from caerbannog.settings import Settings
 
 if platform.system() == "Linux":
     import grp
@@ -13,7 +17,6 @@ if platform.system() == "Linux":
 from caerbannog import var_loader
 from caerbannog.command import ElevationType
 from caerbannog.roles.role_context import RoleContext
-
 
 _context: Dict[str, Any] = {
     "root": os.getcwd(),
@@ -151,13 +154,13 @@ def system():
     return _context["host"]["system"]
 
 
-def settings() -> Settings:
+def settings() -> "Settings":
     if _settings is None:
         raise Exception("Settings are not available yet")
     return _settings
 
 
-def role_context() -> RoleContext:
+def role_context() -> "RoleContext":
     if _role_context is None:
         raise Exception("No role is currently executing")
 

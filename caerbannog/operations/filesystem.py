@@ -37,6 +37,14 @@ def xdg_data_home(*subpath: str):
     return append_subpath(dir, *subpath)
 
 
+def xdg_cache_home(*subpath: str):
+    dir = context.env().get("XDG_CACHE_HOME", None)
+    if dir == None:
+        dir = home_dir(".cache")
+
+    return append_subpath(dir, *subpath)
+
+
 def append_subpath(base: str, *subpath: str):
     if subpath:
         return os.path.join(base, *subpath)

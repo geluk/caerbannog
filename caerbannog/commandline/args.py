@@ -1,10 +1,10 @@
-import argcomplete
-
 from argparse import ArgumentParser
 from typing import Optional
 
-from . import subcommands
+import argcomplete
+
 from .. import target
+from . import subcommands
 
 
 def parse(dot_target: Optional[str]):
@@ -22,7 +22,9 @@ def parse(dot_target: Optional[str]):
 
     valid_targets = [t.name() for t in target.all()]
     if dot_target is None:
-        apply.add_argument("target", choices=valid_targets, help="Name of the target to apply")
+        apply.add_argument(
+            "target", choices=valid_targets, help="Name of the target to apply"
+        )
     else:
         apply.add_argument(
             "target",
