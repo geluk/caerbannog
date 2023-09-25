@@ -85,7 +85,7 @@ class WinGetPackageIsInstalled(Assertion):
 
     def apply(self, log: LogContext):
         query = subprocess.run(
-            ["winget", "list", "--id", self._package_id],
+            ["winget", "list", "--disable-interactivity", "--id", self._package_id],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
         )
@@ -95,7 +95,7 @@ class WinGetPackageIsInstalled(Assertion):
 
         if context.should_modify():
             install = subprocess.run(
-                ["winget", "install", "--id", self._package_id],
+                ["winget", "install", "--disable-interactivity", "--id", self._package_id],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
