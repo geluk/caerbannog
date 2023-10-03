@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 if platform.system() == "Linux":
     import grp
+    import pwd
 
 from caerbannog import var_loader
 from caerbannog.elevation_type import ElevationType
@@ -37,7 +38,7 @@ def _load_vars():
 def _load_host():
     user: Dict[str, Any] = {}
     if platform.system() == "Linux":
-        user["username"] = os.getlogin()
+        user["username"] = pwd.getpwuid(os.getuid()).pw_name
         user["groupname"] = grp.getgrgid(os.getgid()).gr_name
         user["uid"] = os.getuid()
         user["gid"] = os.getgid()
