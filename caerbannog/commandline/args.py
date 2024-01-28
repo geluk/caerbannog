@@ -50,6 +50,12 @@ def parse(dot_target: Optional[str]):
         help="Comma-separated list of roles to which configuration should be limited",
     )
     apply.add_argument(
+        "--skip-role",
+        type=str,
+        metavar="ROLES",
+        help="Comma-separated list of roles that should be skipped",
+    )
+    apply.add_argument(
         "--show-context", action="store_true", help="Show all context variables"
     )
 

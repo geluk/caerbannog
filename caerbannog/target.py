@@ -58,14 +58,14 @@ class TargetDescriptor:
             [_targets[t].includes(name) for t in self._requires]
         )
 
-    def execute(self, role_limit: Optional[List[str]] = None):
+    def execute(self, role_limit: Optional[List[str]] = [], skip_roles: List[str] = []):
         for req in self._requires:
             logger.info(f"Target {fmt.target(self._name)} requires {fmt.target(req)}")
-            _targets[req].execute(role_limit=role_limit)
+            _targets[req].execute(role_limit=role_limit, skip_roles=skip_roles)
 
         logger.info(f"Applying target {fmt.target(self._name)}")
         for role in self._roles:
-            if role_limit is not None and role not in role_limit:
+            if (role_limit is not None and role not in role_limit) or role in skip_roles:
                 continue
             apply_role(role)
 

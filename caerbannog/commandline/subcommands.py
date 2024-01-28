@@ -31,7 +31,9 @@ def configure(args: Namespace):
             exit(0)
 
         role_limit = None if args.role is None else args.role.split(",")
-        target.current().execute(role_limit=role_limit)
+        skip_roles = [] if args.skip_role is None else args.skip_role.split(",")
+
+        target.current().execute(role_limit=role_limit, skip_roles=skip_roles)
 
 
 def show_target(args: Namespace):
