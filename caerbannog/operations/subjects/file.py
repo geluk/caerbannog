@@ -194,6 +194,10 @@ class IsFile(Assertion):
             if has_mode is not None:
                 parent.has_mode(_to_dir_mode(has_mode._mode))
 
+            has_owner = self._entry.get_assertion(HasOwner)
+            if has_owner is not None:
+                parent.has_owner(user=has_owner._user, group=has_owner._group)
+
             self._entry.add_child(parent)
 
     def apply(self, log: LogContext):
