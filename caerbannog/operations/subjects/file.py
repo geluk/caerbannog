@@ -55,7 +55,7 @@ class File(_FsEntry):
 
     def is_present(self, create_parents=True):
         """
-        Assert that this file is present. If `parents` is `True`, also
+        Assert that this file is present. If `create_parents` is `True`, also
         recursively create all nonexistent parent directories.
         """
         self._is_file(create_parents=create_parents)
@@ -99,7 +99,8 @@ class File(_FsEntry):
         return self.has_content(joined, create_parents=create_parents)
 
     def has_content(self, content: Union[str, bytes], create_parents=False):
-        self._is_file(create_parents=create_parents)
+        if not self.has_assertion(IsFile):
+            self._is_file(create_parents=create_parents)
         if type(content) is str:
             self.add_assertion(HasContent(self._path, content))
         elif type(content) is bytes:

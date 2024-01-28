@@ -47,14 +47,14 @@ class ServiceFile(File):
 
     def restarts_service(self):
         """
-        Restart the systemd daemon if the service file has changed.
+        Restart the service if the service file has changed.
         """
         self._restart = True
         self._update_handler()
 
     def does_not_restart_service(self):
         """
-        Do not restart the systemd daemon if the service file has changed.
+        Do not restart the service if the service file has changed.
         """
         self._restart = False
         self._update_handler()
@@ -85,6 +85,7 @@ class SystemdService(Subject):
 
     def file(self, f: Callable[[ServiceFile], Any]):
         self._file = ServiceFile(self)
+        self._file.is_present(create_parents=True)
         f(self._file)
 
         self.add_child(self._file)
