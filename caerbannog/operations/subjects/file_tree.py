@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
-from typing import Iterator, List, Self, Tuple
+from typing import Iterator, List, Self, Tuple, cast
 
 from caerbannog import context
 from caerbannog.logging import *
 from caerbannog.operations import *
 
 from . import Directory, File
+from .file import IsDirectory, IsFile
 
 
 class FileTree(Subject):
@@ -26,6 +27,28 @@ class FileTree(Subject):
     def replicates_children_to(self, *destinations: str, exclusive=False):
         for dst in destinations:
             self.add_assertion(IsReplicatedTo(self, dst, exclusive, children_only=True))
+        return self
+
+    def has_file_mode(self, mode: int) -> Self:
+        assertion = self.get_last_assertion(IsReplicatedTo)
+        if not assertion:
+            return self
+
+        for file_subject in assertion.get_subjects(File):
+            if file_subject.get_assertion(IsFile):
+                file_subject.has_mode(mode)
+
+        return self
+
+    def has_directory_mode(self, mode: int) -> Self:
+        assertion = self.get_last_assertion(IsReplicatedTo)
+        if not assertion:
+            return self
+
+        for dir_subject in assertion.get_subjects(Directory):
+            if dir_subject.get_assertion(IsDirectory):
+                dir_subject.has_mode(mode)
+
         return self
 
     def clone(self) -> Self:
@@ -54,6 +77,11 @@ class IsReplicatedTo(Assertion):
         self._exclusive = exclusive
         self._children_only = children_only
         self._subjects: List[Subject] = list(self._generate_subjects())
+
+    T = TypeVar("T")
+
+    def get_subjects(self, t: Type[T]) -> List[T]:
+        return cast(List[t], list(filter(lambda a: type(a) == t, self._subjects)))
 
     def _generate_subjects(self) -> Iterator[Subject]:
         expected_files: List[Path] = []

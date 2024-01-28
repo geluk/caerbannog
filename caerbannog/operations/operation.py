@@ -121,6 +121,12 @@ class Subject(ABC):
             return None
         return cast(t, matching_assertions[0])
 
+    def get_last_assertion(self, t: Type[T]) -> Optional[T]:
+        matching_assertions = list(filter(lambda a: type(a) == t, self._assertions))
+        if len(matching_assertions) == 0:
+            return None
+        return cast(t, matching_assertions[-1])
+
     def remove_assertions(self, t: Type):
         self._assertions = list(filter(lambda a: type(a) != t, self._assertions))
 
