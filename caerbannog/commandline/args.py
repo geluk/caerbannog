@@ -75,6 +75,11 @@ def parse(dot_target: Optional[str]):
         help="List available targets",
     )
     tgt.add_argument("target", default=None, nargs="?")
+    tgt.add_argument(
+        "--full",
+        action="store_true",
+        help="Also include roles in target description",
+    )
 
     tgt.set_defaults(func=subcommands.show_target)
 

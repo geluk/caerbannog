@@ -47,6 +47,9 @@ class TargetDescriptor:
         self._roles.extend(roles)
         return self
 
+    def roles(self) -> List[str]:
+        return self._roles
+
     def name(self) -> str:
         return self._name
 

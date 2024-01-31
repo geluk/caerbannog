@@ -4,6 +4,7 @@ import sys
 from argparse import Namespace
 from typing import List
 
+from caerbannog.logging import fmt
 from caerbannog import context, password, secrets, target
 
 
@@ -37,22 +38,31 @@ def configure(args: Namespace):
 
 
 def show_target(args: Namespace):
-    def _show_target(tgt: target.TargetDescriptor, padding: List[str], last: bool):
+    def _show_tree(item: str, padding: List[str], last: bool, char="─"):
         print("".join(padding[:-1]), end="")
-
         if len(padding) > 0:
             if last:
-                print("└───", end="")
+                print(f"└{char * 3}", end="")
             else:
-                print("├───", end="")
+                print(f"├{char * 3}", end="")
+        print(item)
 
-        print(tgt.name())
+    def _show_target(tgt: target.TargetDescriptor, padding: List[str], last: bool):
+        _show_tree(tgt.name(), padding, last)
 
-        dep_count = len(tgt.dependencies())
+        deps = tgt.dependencies()
+        roles = tgt.roles() if args.full else []
+
         for i, dep in enumerate(tgt.dependencies(), 1):
-            will_be_last = i == dep_count
+            will_be_last = i == len(deps) + len(roles)
             padding.append("    " if will_be_last else "│   ")
             _show_target(dep, padding, will_be_last)
+            padding.pop()
+
+        for i, role in enumerate(roles, 1):
+            last = i == len(roles)
+            padding.append("    " if last else "│   ")
+            _show_tree(fmt.target(role), padding, last, char="╌")
             padding.pop()
 
     if args.target is not None:
@@ -64,6 +74,12 @@ def show_target(args: Namespace):
     else:
         for tgt in target.all():
             print(tgt.name())
+            if args.full:
+                for i, role in enumerate(tgt.roles(), 1):
+                    if i == len(tgt.roles()):
+                        print(f"└╌╌╌{fmt.target(role)}")
+                    else:
+                        print(f"├╌╌╌{fmt.target(role)}")
 
 
 def encrypt(args: Namespace):
