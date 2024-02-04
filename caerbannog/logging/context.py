@@ -40,6 +40,9 @@ class LogContext:
     def detail_green(self, msg):
         print(f"    {self._indent()}{FG_GREEN}{msg}{FG_RESET}", file=sys.stderr)
 
+    def detail_cyan(self, msg):
+        print(f"    {self._indent()}{FG_CYAN}{msg}{FG_RESET}", file=sys.stderr)
+
     def _indent(self) -> str:
         return "  " * self._depth
 

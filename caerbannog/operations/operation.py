@@ -236,12 +236,15 @@ class Change:
                     log.detail_green(detail)
                 elif diff_type == DiffType.REMOVE:
                     log.detail_red(detail)
+                elif diff_type == DiffType.HEADER:
+                    log.detail_cyan(detail)
 
 
 class DiffType(Enum):
     NEUTRAL = 0
     ADD = 1
     REMOVE = 2
+    HEADER = 3
 
 
 class DiffLine:
@@ -256,6 +259,10 @@ class DiffLine:
     @staticmethod
     def remove(content: str) -> Tuple[DiffType, str]:
         return (DiffType.REMOVE, f"- {content}")
+
+    @staticmethod
+    def header(content: str) -> Tuple[DiffType, str]:
+        return (DiffType.HEADER, content)
 
     @staticmethod
     def detail(content: str) -> Tuple[DiffType, str]:
