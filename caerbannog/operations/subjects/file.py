@@ -133,10 +133,9 @@ class Directory(_FsEntry):
         return Directory(self._path)
 
 
-class Symlink(Subject):
+class Symlink(_FsEntry):
     def __init__(self, path: str) -> None:
-        super().__init__()
-        self._path = path
+        super().__init__(path)
 
     def has_target(self, target: str, create_parents=False) -> Self:
         self._is_symlink(target=target, create_parents=create_parents)
@@ -147,9 +146,6 @@ class Symlink(Subject):
 
     def clone(self) -> Self:
         return Symlink(self._path)
-
-    def describe(self):
-        return f"path {fmt.code(self._path)}"
 
 
 class IsDirectory(Assertion):
