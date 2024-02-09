@@ -536,12 +536,16 @@ class ContentChanged(Change):
                 if line == trimmed:
                     trimmed = f"{trimmed}^m"
 
-                if line.startswith("-"):
-                    formatted.append(DiffLine.remove(trimmed[1:]))
-                elif line.startswith("+"):
-                    formatted.append(DiffLine.add(trimmed[1:]))
+                if line.startswith("@"):
+                    formatted.append(DiffLine.header(trimmed))
                 else:
-                    formatted.append(DiffLine.neutral(trimmed))
+                    trimmed = trimmed[1:]
+                    if line.startswith("-"):
+                        formatted.append(DiffLine.remove(trimmed))
+                    elif line.startswith("+"):
+                        formatted.append(DiffLine.add(trimmed))
+                    elif line.startswith(" "):
+                        formatted.append(DiffLine.neutral(trimmed))
             return formatted
 
         def count_by_type(difftype: str):
