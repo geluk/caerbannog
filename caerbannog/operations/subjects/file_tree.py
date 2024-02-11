@@ -7,7 +7,7 @@ from caerbannog.logging import *
 from caerbannog.operations import *
 
 from . import Directory, File
-from .file import IsDirectory, IsFile
+from .file import IsDirectory, IsFile, _FsEntry
 
 
 class FileTree(Subject):
@@ -51,6 +51,21 @@ class FileTree(Subject):
 
         return self
 
+    def has_owner(
+        self, user: Optional[str] = None, group: Optional[str] = None
+    ) -> Self:
+        assertion = self.get_last_assertion(IsReplicatedTo)
+        if not assertion:
+            return self
+
+        for subject in assertion.get_subjects(_FsEntry):
+            if subject.get_assertion(IsDirectory):
+                subject.has_owner(user=user, group=group)
+            elif subject.get_assertion(IsFile):
+                subject.has_owner(user=user, group=group)
+
+        return self
+
     def clone(self) -> Self:
         return FileTree(self._source, self._resolve_templates)
 
@@ -80,10 +95,12 @@ class IsReplicatedTo(Assertion):
 
     T = TypeVar("T")
 
-    def get_subjects(self, t: Type[T]) -> List[T]:
-        return cast(List[t], list(filter(lambda a: type(a) == t, self._subjects)))
+    def get_subjects(self, t: Type[T] = Subject) -> List[T]:
+        return cast(
+            List[t], list(filter(lambda a: issubclass(type(a), t), self._subjects))
+        )
 
-    def _generate_subjects(self) -> Iterator[Subject]:
+    def _generate_subjects(self) -> Iterator[_FsEntry]:
         expected_files: List[Path] = []
         expected_dirs: List[Path] = []
 
