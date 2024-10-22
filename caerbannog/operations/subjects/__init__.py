@@ -5,3 +5,4 @@ from .group import Group
 from .package import Package
 from .psget_module import PsGetModule
 from .systemd import Scope, SystemdService
+from .registry import RegistryKey, RegistryHive
