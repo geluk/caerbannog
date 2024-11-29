@@ -1,7 +1,7 @@
 import subprocess
 from typing import Dict, Set
 
-from caerbannog import context
+from caerbannog import command, context
 from caerbannog.logging import *
 from caerbannog.operations import *
 
@@ -132,7 +132,9 @@ class PacmanPackageIsInstalled(Assertion):
 
         if context.should_modify():
             install = subprocess.run(
-                ["sudo", "pacman", "--sync", "--noconfirm", *missing],
+                command.create_elevated_command(
+                    "pacman", "--sync", "--noconfirm", *missing
+                ),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
