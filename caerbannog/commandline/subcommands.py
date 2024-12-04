@@ -17,8 +17,9 @@ def configure(args: Namespace):
 
         command = [
             "sudo",
-            "env",
+            "--preserve-env",
             "PYTHONDONTWRITEBYTECODE=1",
+            sys.executable,
             *sys.argv,
             "--context",
             serialized,
