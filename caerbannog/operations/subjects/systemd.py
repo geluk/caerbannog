@@ -86,6 +86,8 @@ class SystemdService(Subject):
     def file(self, f: Callable[[ServiceFile], Any]):
         self._file = ServiceFile(self)
         self._file.is_present(create_parents=True)
+        if self._scope == Scope.SYSTEM:
+            self._file.is_system_file()
         f(self._file)
 
         self.add_child(self._file)
