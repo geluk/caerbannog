@@ -111,9 +111,6 @@ class File(_FsEntry):
             self.add_assertion(HasBinaryContent(self._path, content))
         return self
 
-    def clone(self) -> Self:
-        return File(self._path)
-
 
 class Directory(_FsEntry):
     def __init__(self, path: str) -> None:
@@ -127,9 +124,6 @@ class Directory(_FsEntry):
         self._is_directory(create_parents=create_parents)
         return self
 
-    def clone(self) -> Self:
-        return Directory(self._path)
-
 
 class Symlink(_FsEntry):
     def __init__(self, path: str) -> None:
@@ -141,9 +135,6 @@ class Symlink(_FsEntry):
 
     def has_mode(self, mode: int):
         raise Exception("Cannot set mode on symlink")
-
-    def clone(self) -> Self:
-        return Symlink(self._path)
 
 
 class IsDirectory(Assertion):

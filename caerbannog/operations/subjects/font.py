@@ -28,9 +28,6 @@ class Font(Subject):
     def describe(self):
         return f"font {fmt.subject(self._name)}"
 
-    def clone(self) -> Self:
-        return Font(self._orig_path)
-
 
 class IsInstalled(Assertion):
     def __init__(self) -> None:

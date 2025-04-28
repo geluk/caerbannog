@@ -22,9 +22,6 @@ class PsGetModule(Subject):
             return f"PsGet modules {joined}"
         return f"PsGet module {joined}"
 
-    def clone(self) -> Self:
-        return PsGetModule(*self._names)
-
 
 class IsInstalled(Assertion):
     _cache: Union[Set[str], None] = None

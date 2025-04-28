@@ -28,9 +28,6 @@ class Package(Subject):
             return f"packages {joined}"
         return f"package {joined}"
 
-    def clone(self) -> Self:
-        return Package(*self._names)
-
 
 class WinGetPackage(Subject):
     def __init__(self, *ids: str) -> None:
@@ -51,9 +48,6 @@ class WinGetPackage(Subject):
             return f"WinGet packages {joined}"
         return f"WinGet package {joined}"
 
-    def clone(self) -> Self:
-        return WinGetPackage(*self._ids)
-
 
 class PacmanPackage(Subject):
     def __init__(self, *names: str) -> None:
@@ -72,9 +66,6 @@ class PacmanPackage(Subject):
         if len(self._names) > 1:
             return f"Pacman packages {joined}"
         return f"Pacman package {joined}"
-
-    def clone(self) -> Self:
-        return PacmanPackage(*self._names)
 
 
 class WinGetPackageIsInstalled(Assertion):

@@ -149,11 +149,6 @@ class Subject(ABC):
         handler.register(self)
         return self
 
-    def on_change_self(self, f: Callable[[Self], Any]):
-        clone = self.clone()
-        f(clone)
-        return self.on_change(Handler(clone))
-
     def annotate(self, description) -> Self:
         """
         Override the default description of this subject.
@@ -166,10 +161,6 @@ class Subject(ABC):
             return self._description
 
         return self.describe()
-
-    @abstractmethod
-    def clone(self) -> Self:
-        pass
 
     @abstractmethod
     def describe(self) -> str:

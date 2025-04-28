@@ -23,9 +23,6 @@ class Group(Subject):
     def describe(self):
         return f"group {fmt.subject(self._name)}"
 
-    def clone(self) -> Self:
-        return Group(self._name)
-
 
 class IsPresent(Assertion):
     def __init__(self, name: str) -> None:

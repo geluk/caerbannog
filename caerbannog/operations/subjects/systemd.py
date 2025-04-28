@@ -137,7 +137,7 @@ class SystemdService(Subject):
     def _create_scoped_command(self, *args):
         return _create_scoped_command(self._scope, *args)
 
-    def clone(self) -> Self:
+    def clone(self) -> "SystemdService":
         return SystemdService(self._name, self._scope)
 
 

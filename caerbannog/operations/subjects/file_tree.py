@@ -66,9 +66,6 @@ class FileTree(Subject):
 
         return self
 
-    def clone(self) -> Self:
-        return FileTree(self._source, self._resolve_templates)
-
     def describe(self) -> str:
         return f"file tree {fmt.code(self._source)}"
 
