@@ -67,7 +67,7 @@ def parse(dot_target: Optional[str]):
         help="Override the default context with a JSON-serialized context string",
     )
 
-    apply.set_defaults(func=subcommands.configure)
+    apply.set_defaults(func=subcommands.apply)
 
     tgt = subparsers.add_parser(
         "target",

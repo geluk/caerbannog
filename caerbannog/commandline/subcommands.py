@@ -8,7 +8,7 @@ from caerbannog.logging import fmt
 from caerbannog import context, password, secrets, target
 
 
-def configure(args: Namespace):
+def apply(args: Namespace):
     target.select_target(args.target)
     context.init(args)
 
