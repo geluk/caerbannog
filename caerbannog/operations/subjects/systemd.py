@@ -152,13 +152,7 @@ class IsStarted(Assertion):
             self._display_passed(log)
             return
         elif active_state == "inactive":
-            if context.should_modify():
-                subprocess.run(
-                    self._service._create_scoped_command("start", self._service._name),
-                    env=context.env(),
-                    check=True,
-                )
-            self.register_change(Started())
+            self.register_change(Started(self._service))
         else:
             raise Exception(
                 f"Unknown state for service '{self._service._name}': ActiveState={active_state}"
@@ -178,13 +172,7 @@ class IsEnabled(Assertion):
             self._display_passed(log)
             return
         elif unit_file_state == "disabled":
-            if context.should_modify():
-                subprocess.run(
-                    self._service._create_scoped_command("enable", self._service._name),
-                    env=context.env(),
-                    check=True,
-                )
-            self.register_change(Enabled())
+            self.register_change(Enabled(self._service))
         else:
             raise Exception(
                 f"Unknown state for service '{self._service._name}': UnitFileState={unit_file_state}"
@@ -199,13 +187,7 @@ class IsRestarted(Assertion):
         super().__init__("is restarted")
 
     def apply(self, log: LogContext):
-        if context.should_modify():
-            subprocess.run(
-                self._service._create_scoped_command("restart", self._service._name),
-                env=context.env(),
-                check=True,
-            )
-        self.register_change(Restarted())
+        self.register_change(Restarted(self._service))
 
         self._display(log)
 
@@ -216,35 +198,61 @@ class IsReloaded(Assertion):
         self._scope = scope
 
     def apply(self, log: LogContext):
-        if context.should_modify():
-            subprocess.run(
-                _create_scoped_command(self._scope, "daemon-reload"),
-                env=context.env(),
-                check=True,
-            )
-        self.register_change(Reloaded())
+        self.register_change(Reloaded(self._scope))
 
         self._display(log)
 
 
 class Started(Change):
-    def __init__(self):
+    def __init__(self, service: SystemdService):
+        self._service = service
         super().__init__("started")
+
+    def execute(self):
+        subprocess.run(
+            self._service._create_scoped_command("start", self._service._name),
+            env=context.env(),
+            check=True,
+        )
 
 
 class Enabled(Change):
-    def __init__(self):
+    def __init__(self, service: SystemdService):
+        self._service = service
         super().__init__("enabled")
 
-
-class Reloaded(Change):
-    def __init__(self):
-        super().__init__("reloaded")
+    def execute(self):
+        subprocess.run(
+            self._service._create_scoped_command("enable", self._service._name),
+            env=context.env(),
+            check=True,
+        )
 
 
 class Restarted(Change):
-    def __init__(self):
+    def __init__(self, service: SystemdService):
+        self._service = service
         super().__init__("restarted")
+
+    def execute(self):
+        subprocess.run(
+            self._service._create_scoped_command("restart", self._service._name),
+            env=context.env(),
+            check=True,
+        )
+
+
+class Reloaded(Change):
+    def __init__(self, scope: Scope):
+        self._scope = scope
+        super().__init__("reloaded")
+
+    def execute(self):
+        subprocess.run(
+            _create_scoped_command(self._scope, "daemon-reload"),
+            env=context.env(),
+            check=True,
+        )
 
 
 def _create_scoped_command(scope: Scope, *args: str):

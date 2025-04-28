@@ -41,27 +41,7 @@ class IsInstalled(Assertion):
             self._display(log)
             return
 
-        if context.should_modify():
-            repository = subprocess.run(
-                _powershell(f"(Find-Module {self._package_name}).Repository"),
-                check=True,
-                text=True,
-                capture_output=True,
-            )
-
-            install = subprocess.run(
-                _powershell(
-                    f"Install-Module -Scope CurrentUser {self._package_name}",
-                ),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-            if install.returncode != 0:
-                raise Exception(f"installation failed", install.stdout.splitlines())
-            self.register_change(Installed(install.stdout.splitlines()))
-        else:
-            self.register_change(Installed([DiffLine.add(self._package_name)]))
+        self.register_change(Installed(self._package_name))
 
         self._display(log)
 
@@ -83,8 +63,21 @@ class IsInstalled(Assertion):
 
 
 class Installed(Change):
-    def __init__(self, details: Sequence[str | Tuple[DiffType, str]]):
-        super().__init__("installed", details)
+    def __init__(self, name: str):
+        self._package_name = name
+        super().__init__("installed", [DiffLine.add(name)])
+
+    def execute(self):
+        install = subprocess.run(
+            _powershell(
+                f"Install-Module -Scope CurrentUser {self._package_name}",
+            ),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        if install.returncode != 0:
+            raise Exception(f"installation failed", install.stdout.splitlines())
 
 
 def _powershell(command: str):

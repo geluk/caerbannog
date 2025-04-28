@@ -175,19 +175,13 @@ class IsDirectory(Assertion):
             self._display_passed(log)
             return
         elif os.path.isfile(self._path):
-            if context.should_modify():
-                os.remove(self._path)
-            self.register_change(FileRemoved())
+            self.register_change(FileRemoved(self._path))
         elif os.path.islink(self._path):
-            if context.should_modify():
-                os.remove(self._path)
-            self.register_change(SymlinkRemoved())
+            self.register_change(SymlinkRemoved(self._path))
         elif os.path.exists(self._path):
             raise Exception(f"'{self._path}' is not a file, directory or symlink")
 
-        if context.should_modify():
-            pathlib.Path(self._path).mkdir()
-        self.register_change(DirectoryCreated())
+        self.register_change(DirectoryCreated(self._path))
 
         self._display(log)
 
@@ -230,26 +224,19 @@ class IsFile(Assertion):
             self._display_passed(log)
             return
         elif os.path.isdir(self._path):
-            if context.should_modify():
-                shutil.rmtree(self._path)
-            self.register_change(DirectoryRemoved())
+            self.register_change(DirectoryRemoved(self._path))
         elif os.path.islink(self._path):
-            if context.should_modify():
-                os.remove(self._path)
-            self.register_change(SymlinkRemoved())
+            self.register_change(SymlinkRemoved(self._path))
         elif os.path.exists(self._path):
             raise Exception(f"'{self._path}' is not a file, directory or symlink")
 
-        if context.should_modify():
-            with open(self._path, "w"):
-                pass
-            self.register_change(FileCreated())
+        self.register_change(FileCreated(self._path))
 
         self._display_changed(log)
 
 
 class IsSymlink(Assertion):
-    def __init__(self, symlink: Symlink, target: str, create_parents: bool):
+    def __init__(self, symlink: _FsEntry, target: str, create_parents: bool):
         super().__init__(f"is symlink to {fmt.code(target)}")
         self._path = symlink._path
         self._symlink = symlink
@@ -275,24 +262,15 @@ class IsSymlink(Assertion):
             if old_target == self._target:
                 self._display_passed(log)
                 return
-            if context.should_modify():
-                os.remove(self._path)
-                os.symlink(self._target, self._path)
-            self.register_change(SymlinkChanged(old_target, self._target))
+            self.register_change(SymlinkChanged(self._path, old_target, self._target))
         elif os.path.isdir(self._path):
-            if context.should_modify():
-                shutil.rmtree(self._path)
-            self.register_change(DirectoryRemoved())
+            self.register_change(DirectoryRemoved(self._path))
         elif os.path.isfile(self._path):
-            if context.should_modify():
-                os.remove(self._path)
-            self.register_change(FileRemoved())
+            self.register_change(FileRemoved(self._path))
         elif os.path.exists(self._path):
             raise Exception(f"'{self._path}' is not a file, directory or symlink")
         else:
-            if context.should_modify():
-                os.symlink(self._target, self._path)
-                self.register_change(SymlinkCreated())
+            self.register_change(SymlinkCreated(self._path, self._target))
 
         self._display_changed(log)
 
@@ -304,17 +282,11 @@ class IsAbsent(Assertion):
 
     def apply(self, log: LogContext):
         if os.path.isdir(self._path):
-            if context.should_modify():
-                shutil.rmtree(self._path)
-            self.register_change(DirectoryRemoved())
+            self.register_change(DirectoryRemoved(self._path))
         elif os.path.isfile(self._path):
-            if context.should_modify():
-                os.remove(self._path)
-            self.register_change(FileRemoved())
+            self.register_change(FileRemoved(self._path))
         elif os.path.islink(self._path):
-            if context.should_modify():
-                os.remove(self._path)
-            self.register_change(SymlinkRemoved())
+            self.register_change(SymlinkRemoved(self._path))
         elif os.path.exists(self._path):
             raise Exception(f"'{self._path}' is not a file, directory or symlink")
 
@@ -340,10 +312,8 @@ class HasOwner(Assertion):
             old_user = path.owner()
             old_group = path.group()
         except FileNotFoundError:
-            if not context.should_modify():
-                self._display_failed(log)
-                return
-            raise
+            self._display_failed(log)
+            return
 
         user: Any = None
         if self._user is not None and old_user != self._user:
@@ -358,13 +328,10 @@ class HasOwner(Assertion):
             self._display_passed(log)
             return
 
-        if context.should_modify():
-            shutil.chown(self._path, user=user, group=group)
-
         if user is not None:
-            self.register_change(UserChanged(old_user, user))
+            self.register_change(UserChanged(self._path, old_user, user))
         if group is not None:
-            self.register_change(GroupChanged(old_group, group))
+            self.register_change(GroupChanged(self._path, old_group, group))
 
         self._display(log)
 
@@ -379,17 +346,13 @@ class HasMode(Assertion):
         try:
             stat = os.stat(self._path, follow_symlinks=False)
         except FileNotFoundError:
-            if not context.should_modify():
-                self._display_failed(log)
-                return
-            raise
+            self._display_failed(log)
+            return
 
         current_mode = stat.st_mode & 0o777
 
         if current_mode != self._mode:
-            if context.should_modify():
-                os.chmod(self._path, self._mode)
-            self.register_change(ModeChanged(current_mode, self._mode))
+            self.register_change(ModeChanged(self._path, current_mode, self._mode))
 
         self._display(log)
 
@@ -411,11 +374,9 @@ class HasContent(Assertion):
             is_different = True
 
         if is_different:
-            if context.should_modify():
-                with open(self._path, "w", encoding="utf-8") as file:
-                    file.write(self._content)
-
-            self.register_change(ContentChanged(existing_content, self._content))
+            self.register_change(
+                ContentChanged(self._path, existing_content, self._content)
+            )
 
         self._display(log)
 
@@ -437,74 +398,125 @@ class HasBinaryContent(Assertion):
             is_different = True
 
         if is_different:
-            if context.should_modify():
-                with open(self._path, "wb") as file:
-                    file.write(self._content)
-
             self.register_change(
-                ContentChangedSummary(len(self._content) - len(existing_content))
+                ContentChangedSummary(
+                    self._path,
+                    self._content,
+                    len(self._content) - len(existing_content),
+                )
             )
 
         self._display(log)
 
 
 class UserChanged(Change):
-    def __init__(self, old: str, new: str) -> None:
+    def __init__(self, path: str, old: str, new: str) -> None:
+        self._path = path
+        self._user = new
         super().__init__("user changed", [DiffLine.remove(old), DiffLine.add(new)])
+
+    def execute(self):
+        shutil.chown(self._path, user=self._user)
 
 
 class GroupChanged(Change):
-    def __init__(self, old: str, new: str) -> None:
+    def __init__(self, path: str, old: str, new: str) -> None:
+        self._path = path
+        self._group = new
         super().__init__("group changed", [DiffLine.remove(old), DiffLine.add(new)])
+
+    def execute(self):
+        shutil.chown(self._path, group=self._group)
 
 
 class ModeChanged(Change):
-    def __init__(self, old: int, new: int) -> None:
+    def __init__(self, path: str, old: int, new: int) -> None:
+        self._path = path
+        self._mode = new
+
         super().__init__(
             f"mode changed", [DiffLine.remove(f"{old:03o}"), DiffLine.add(f"{new:03o}")]
         )
 
+    def execute(self):
+        os.chmod(self._path, self._mode)
+
 
 class FileCreated(Change):
-    def __init__(self):
+    def __init__(self, path: str):
+        self._path = path
         super().__init__("file created")
+
+    def execute(self):
+        with open(self._path, "w"):
+            pass
 
 
 class DirectoryCreated(Change):
-    def __init__(self):
+    def __init__(self, path: str):
+        self._path = path
         super().__init__("directory created")
+
+    def execute(self):
+        pathlib.Path(self._path).mkdir()
 
 
 class SymlinkCreated(Change):
-    def __init__(self):
+    def __init__(self, path: str, target: str):
+        self._path = path
+        self._target = target
         super().__init__("symlink created")
+
+    def execute(self):
+        os.symlink(self._target, self._path)
 
 
 class DirectoryRemoved(Change):
-    def __init__(self):
+    def __init__(self, path: str):
+        self._path = path
         super().__init__("directory removed")
+
+    def execute(self):
+        shutil.rmtree(self._path)
 
 
 class FileRemoved(Change):
-    def __init__(self):
+    def __init__(self, path: str):
+        self._path = path
         super().__init__("file removed")
+
+    def execute(self):
+        os.remove(self._path)
 
 
 class SymlinkRemoved(Change):
-    def __init__(self):
+    def __init__(self, path: str):
+        self._path = path
         super().__init__("symlink removed")
+
+    def execute(self):
+        os.remove(self._path)
 
 
 class SymlinkChanged(Change):
-    def __init__(self, old_target: str, new_target: str):
+    def __init__(self, path: str, old_target: str, new_target: str):
+        self._path = path
+        self._target = new_target
         super().__init__(
             "symlink changed",
             [DiffLine.remove(f"{old_target}"), DiffLine.add(f"{new_target}")],
         )
 
+    def execute(self):
+        os.remove(self._path)
+        os.symlink(self._target, self._path)
+
 
 class ContentChangedSummary(Change):
-    def __init__(self, bytes: int) -> None:
+    def __init__(self, path: str, content: bytes, bytes: int) -> None:
+        self._path = path
+        self._content = content
+
         if bytes > 0:
             details = f"+{str(bytes)}"
         else:
@@ -512,9 +524,15 @@ class ContentChangedSummary(Change):
 
         super().__init__("content changed", [details])
 
+    def execute(self):
+        with open(self._path, "wb", encoding="utf-8") as file:
+            file.write(self._content)
+
 
 class ContentChanged(Change):
-    def __init__(self, frm: str, to: str) -> None:
+    def __init__(self, path: str, frm: str, to: str) -> None:
+        self._path = path
+        self._content = to
         diff = list(
             difflib.unified_diff(
                 frm.splitlines(keepends=True), to.splitlines(keepends=True)
@@ -575,3 +593,7 @@ class ContentChanged(Change):
             lines.append((DiffType.NEUTRAL, "<only whitespace changes>"))
 
         super().__init__("content changed", details=lines)
+
+    def execute(self):
+        with open(self._path, "w", encoding="utf-8") as file:
+            file.write(self._content)

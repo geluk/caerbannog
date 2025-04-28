@@ -93,18 +93,7 @@ class WinGetPackageIsInstalled(Assertion):
             self._display(log)
             return
 
-        if context.should_modify():
-            install = subprocess.run(
-                ["winget", "install", "--disable-interactivity", "--id", self._package_id],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-            if install.returncode != 0:
-                raise Exception(f"installation failed", install.stdout.splitlines())
-            self.register_change(Installed(install.stdout.splitlines()))
-        else:
-            self.register_change(Installed([DiffLine.add(self._package_id)]))
+        self.register_change(WinGetPackageInstalled(self._package_id))
 
         self._display(log)
 
@@ -130,20 +119,7 @@ class PacmanPackageIsInstalled(Assertion):
             self._display(log)
             return
 
-        if context.should_modify():
-            install = subprocess.run(
-                command.create_elevated_command(
-                    "pacman", "--sync", "--noconfirm", *missing
-                ),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-            if install.returncode != 0:
-                raise Exception(f"installation failed", install.stdout)
-            self.register_change(Installed(install.stdout.splitlines()))
-        else:
-            self.register_change(Installed([DiffLine.add(name) for name in missing]))
+        self.register_change(PacmanPackageInstalled(missing))
 
         self._display(log)
 
@@ -175,6 +151,41 @@ class PacmanPackageIsInstalled(Assertion):
         return packages, groups
 
 
-class Installed(Change):
-    def __init__(self, details: Sequence[str | Tuple[DiffType, str]]):
-        super().__init__("installed", details)
+class PacmanPackageInstalled(Change):
+    def __init__(self, packages: Set[str]):
+        self._pachages = packages
+        super().__init__("installed", [DiffLine.add(name) for name in packages])
+
+    def execute(self):
+        install = subprocess.run(
+            command.create_elevated_command(
+                "pacman", "--sync", "--noconfirm", *self._pachages
+            ),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        if install.returncode != 0:
+            raise Exception(f"installation failed", install.stdout)
+
+
+class WinGetPackageInstalled(Change):
+    def __init__(self, name: str):
+        self._package_name = name
+        super().__init__("installed", [DiffLine.add(name)])
+
+    def execute(self):
+        install = subprocess.run(
+            [
+                "winget",
+                "install",
+                "--disable-interactivity",
+                "--id",
+                self._package_name,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        if install.returncode != 0:
+            raise Exception(f"installation failed", install.stdout.splitlines())
