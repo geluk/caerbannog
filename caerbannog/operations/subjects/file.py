@@ -161,9 +161,8 @@ class IsDirectory(Assertion):
 
             self._entry.add_subject_before(parent)
 
-    def apply(self, log: LogContext):
+    def apply(self):
         if os.path.isdir(self._path):
-            self._display_passed(log)
             return
         elif os.path.isfile(self._path):
             self.register_change(FileRemoved(self._path))
@@ -173,8 +172,6 @@ class IsDirectory(Assertion):
             raise Exception(f"'{self._path}' is not a file, directory or symlink")
 
         self.register_change(DirectoryCreated(self._path))
-
-        self._display(log)
 
 
 class IsFile(Assertion):
@@ -210,9 +207,8 @@ class IsFile(Assertion):
 
             self._entry.add_subject_before(parent)
 
-    def apply(self, log: LogContext):
+    def apply(self):
         if os.path.isfile(self._path):
-            self._display_passed(log)
             return
         elif os.path.isdir(self._path):
             self.register_change(DirectoryRemoved(self._path))
@@ -222,8 +218,6 @@ class IsFile(Assertion):
             raise Exception(f"'{self._path}' is not a file, directory or symlink")
 
         self.register_change(FileCreated(self._path))
-
-        self._display_changed(log)
 
 
 class IsSymlink(Assertion):
@@ -247,11 +241,10 @@ class IsSymlink(Assertion):
             )
             self._symlink.add_subject_before(parent)
 
-    def apply(self, log: LogContext):
+    def apply(self):
         if os.path.islink(self._path):
             old_target = os.readlink(self._path)
             if old_target == self._target:
-                self._display_passed(log)
                 return
             self.register_change(SymlinkChanged(self._path, old_target, self._target))
         elif os.path.isdir(self._path):
@@ -263,15 +256,13 @@ class IsSymlink(Assertion):
         else:
             self.register_change(SymlinkCreated(self._path, self._target))
 
-        self._display_changed(log)
-
 
 class IsAbsent(Assertion):
     def __init__(self, path: str):
         super().__init__("is absent")
         self._path = path
 
-    def apply(self, log: LogContext):
+    def apply(self):
         if os.path.isdir(self._path):
             self.register_change(DirectoryRemoved(self._path))
         elif os.path.isfile(self._path):
@@ -280,8 +271,6 @@ class IsAbsent(Assertion):
             self.register_change(SymlinkRemoved(self._path))
         elif os.path.exists(self._path):
             raise Exception(f"'{self._path}' is not a file, directory or symlink")
-
-        self._display(log)
 
 
 class HasOwner(Assertion):
@@ -297,14 +286,13 @@ class HasOwner(Assertion):
         self._user = user
         self._group = group
 
-    def apply(self, log: LogContext):
+    def apply(self):
         path = pathlib.Path(self._path)
         try:
             old_user = path.owner()
             old_group = path.group()
-        except FileNotFoundError:
-            self._display_failed(log)
-            return
+        except FileNotFoundError as err:
+            raise AssertionEvaluationFailure(self, "file not found", err)
 
         user: Any = None
         if self._user is not None and old_user != self._user:
@@ -316,15 +304,12 @@ class HasOwner(Assertion):
 
         if user is None and group is None:
             # Nothing to do
-            self._display_passed(log)
             return
 
         if user is not None:
             self.register_change(UserChanged(self._path, old_user, user))
         if group is not None:
             self.register_change(GroupChanged(self._path, old_group, group))
-
-        self._display(log)
 
 
 class HasMode(Assertion):
@@ -333,19 +318,16 @@ class HasMode(Assertion):
         self._path = path
         self._mode = mode
 
-    def apply(self, log: LogContext):
+    def apply(self):
         try:
             stat = os.stat(self._path, follow_symlinks=False)
-        except FileNotFoundError:
-            self._display_failed(log)
-            return
+        except FileNotFoundError as err:
+            raise AssertionEvaluationFailure(self, "file not found", err)
 
         current_mode = stat.st_mode & 0o777
 
         if current_mode != self._mode:
             self.register_change(ModeChanged(self._path, current_mode, self._mode))
-
-        self._display(log)
 
 
 class HasContent(Assertion):
@@ -354,7 +336,7 @@ class HasContent(Assertion):
         self._path = path
         self._content = content
 
-    def apply(self, log: LogContext):
+    def apply(self):
         is_different = False
         existing_content = ""
         try:
@@ -363,13 +345,13 @@ class HasContent(Assertion):
             is_different = existing_content != self._content
         except FileNotFoundError:
             is_different = True
+        except Exception as err:
+            raise AssertionEvaluationFailure(self, "failed to open file", err)
 
         if is_different:
             self.register_change(
                 ContentChanged(self._path, existing_content, self._content)
             )
-
-        self._display(log)
 
 
 class HasBinaryContent(Assertion):
@@ -378,7 +360,7 @@ class HasBinaryContent(Assertion):
         self._path = path
         self._content = content
 
-    def apply(self, log: LogContext):
+    def apply(self):
         is_different = False
         existing_content = bytes()
         try:
@@ -396,8 +378,6 @@ class HasBinaryContent(Assertion):
                     len(self._content) - len(existing_content),
                 )
             )
-
-        self._display(log)
 
 
 class UserChanged(Change):

@@ -172,11 +172,11 @@ class IsReplicatedTo(Assertion):
             rel_src = _remove_base_dir(rel_src)
         return Path(self._destination, rel_src)
 
-    def apply(self, log: LogContext):
-        with log.level():
-            log.detail(self._assertion_name)
+    def apply(self):
+        with self._log.level():
+            self._log.detail(self._assertion_name)
             for subject in self._subjects:
-                subject.apply(log)
+                subject.apply(self._log)
 
 
 def _remove_base_dir(path: Path) -> Path:

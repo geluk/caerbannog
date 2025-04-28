@@ -97,7 +97,7 @@ class Subject(ABC):
                 subject.apply(log)
 
             for assertion in self._assertions:
-                assertion.apply(log)
+                assertion._apply(log)
 
     def changed(self) -> bool:
         return any(map(lambda a: a.changed(), self.assertions())) or any(
@@ -168,6 +168,8 @@ class Subject(ABC):
 
 
 class Assertion(ABC):
+    _log: LogContext = LogContext()
+
     def __init__(self, name: str) -> None:
         self._changes: List["Change"] = []
         self._assertion_name = name
@@ -181,10 +183,8 @@ class Assertion(ABC):
             self._changes.append(change)
 
     def request_confirmation(self, change) -> bool:
-        # TODO: Not so pretty, we should receive the log context from the caller
-        log = LogContext()
-        with log.level():
-            change.display(log)
+        with self._log.level():
+            change.display(self._log)
 
         while True:
             answer = input(f"Do you want to apply this change? (y/n): ")
@@ -197,15 +197,16 @@ class Assertion(ABC):
     def changed(self) -> bool:
         return len(self._changes) > 0
 
-    @abstractmethod
-    def apply(self, log: LogContext):
-        raise NotImplementedError("Assertion.apply()")
+    def _apply(self, log: LogContext):
+        self._log = log
 
-    def prepare(self):
-        return
-
-    def _display(self, log: LogContext):
         with log.level():
+            try:
+                self.apply()
+            except AssertionEvaluationFailure as e:
+                log.assertion_fail(self._assertion_name, e)
+                return
+
             if self.changed():
                 log.assertion_change(self._assertion_name)
                 for change in self._changes:
@@ -213,21 +214,21 @@ class Assertion(ABC):
             else:
                 log.assertion_pass(self._assertion_name)
 
-    def _display_failed(self, log: LogContext):
-        with log.level():
-            log.assertion_fail(self._assertion_name)
-            for change in self._changes:
-                change.display(log)
+    @abstractmethod
+    def apply(self):
+        raise NotImplementedError("Assertion.apply()")
 
-    def _display_changed(self, log: LogContext):
-        with log.level():
-            log.assertion_change(self._assertion_name)
-            for change in self._changes:
-                change.display(log)
+    def prepare(self):
+        return
 
-    def _display_passed(self, log: LogContext):
-        with log.level():
-            log.assertion_pass(self._assertion_name)
+
+class AssertionEvaluationFailure(Exception):
+    def __init__(
+        self, assertion: Assertion, message: str, inner: Optional[Exception] = None
+    ):
+        self.inner = inner
+        self.message = message
+        super().__init__(f'Failed to evaluate "{assertion._assertion_name}": {message}')
 
 
 class Change:

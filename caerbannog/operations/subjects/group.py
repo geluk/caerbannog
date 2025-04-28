@@ -29,15 +29,13 @@ class IsPresent(Assertion):
         super().__init__("is present")
         self._group_name = name
 
-    def apply(self, log: LogContext):
+    def apply(self):
         groups = grp.getgrall()
         group = next((g for g in groups if g.gr_name == self._group_name), None)
         if group is not None:
-            self._display(log)
             return
 
         self.register_change(Created(self._group_name))
-        self._display(log)
 
 
 class Created(Change):

@@ -31,16 +31,13 @@ class IsInstalled(Assertion):
         super().__init__(descr)
         self._package_name = name
 
-    def apply(self, log: LogContext):
+    def apply(self):
         present = IsInstalled._load_installed()
 
         if self._package_name in present:
-            self._display(log)
             return
 
         self.register_change(Installed(self._package_name))
-
-        self._display(log)
 
     @staticmethod
     def _load_installed() -> Set[str]:

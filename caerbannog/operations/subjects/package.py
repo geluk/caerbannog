@@ -74,19 +74,16 @@ class WinGetPackageIsInstalled(Assertion):
         super().__init__(descr)
         self._package_id = id
 
-    def apply(self, log: LogContext):
+    def apply(self):
         query = subprocess.run(
             ["winget", "list", "--disable-interactivity", "--id", self._package_id],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
         )
         if query.returncode == 0:
-            self._display(log)
             return
 
         self.register_change(WinGetPackageInstalled(self._package_id))
-
-        self._display(log)
 
 
 class PacmanPackageIsInstalled(Assertion):
@@ -100,19 +97,16 @@ class PacmanPackageIsInstalled(Assertion):
         super().__init__(descr)
         self._package_names = names
 
-    def apply(self, log: LogContext):
+    def apply(self):
         packages, groups = PacmanPackageIsInstalled._load_installed()
 
         present = packages | groups.keys()
         missing = self._package_names - present
 
         if len(missing) == 0:
-            self._display(log)
             return
 
         self.register_change(PacmanPackageInstalled(missing))
-
-        self._display(log)
 
     @staticmethod
     def _load_installed() -> Tuple[Set[str], Dict[str, Set[str]]]:

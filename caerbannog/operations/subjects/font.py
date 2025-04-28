@@ -33,10 +33,8 @@ class IsInstalled(Assertion):
     def __init__(self) -> None:
         super().__init__("is installed on system")
 
-    def apply(self, log: LogContext):
+    def apply(self):
         self.register_change(Installed())
-
-        self._display(log)
 
 
 class Installed(Change):

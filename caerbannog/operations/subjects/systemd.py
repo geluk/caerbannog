@@ -146,10 +146,9 @@ class IsStarted(Assertion):
         self._service = service
         super().__init__("is started")
 
-    def apply(self, log: LogContext):
+    def apply(self):
         active_state = self._service._get_property("ActiveState")
         if active_state == "active":
-            self._display_passed(log)
             return
         elif active_state == "inactive":
             self.register_change(Started(self._service))
@@ -158,18 +157,15 @@ class IsStarted(Assertion):
                 f"Unknown state for service '{self._service._name}': ActiveState={active_state}"
             )
 
-        self._display(log)
-
 
 class IsEnabled(Assertion):
     def __init__(self, service: SystemdService) -> None:
         self._service = service
         super().__init__("is enabled")
 
-    def apply(self, log: LogContext):
+    def apply(self):
         unit_file_state = self._service._get_property("UnitFileState")
         if unit_file_state == "enabled":
-            self._display_passed(log)
             return
         elif unit_file_state == "disabled":
             self.register_change(Enabled(self._service))
@@ -178,18 +174,14 @@ class IsEnabled(Assertion):
                 f"Unknown state for service '{self._service._name}': UnitFileState={unit_file_state}"
             )
 
-        self._display(log)
-
 
 class IsRestarted(Assertion):
     def __init__(self, service: SystemdService) -> None:
         self._service = service
         super().__init__("is restarted")
 
-    def apply(self, log: LogContext):
+    def apply(self):
         self.register_change(Restarted(self._service))
-
-        self._display(log)
 
 
 class IsReloaded(Assertion):
@@ -197,10 +189,8 @@ class IsReloaded(Assertion):
         super().__init__(f"systemd {str(scope)} daemon is reloaded")
         self._scope = scope
 
-    def apply(self, log: LogContext):
+    def apply(self):
         self.register_change(Reloaded(self._scope))
-
-        self._display(log)
 
 
 class Started(Change):

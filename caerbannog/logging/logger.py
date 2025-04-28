@@ -1,6 +1,6 @@
 import sys
 import traceback
-from typing import cast
+from typing import Optional, cast
 
 from caerbannog.error import CaerbannogError
 
@@ -15,8 +15,11 @@ def warn(msg):
     print(f"[{FG_YELLOW}!{FG_RESET}] {msg}", file=sys.stderr)
 
 
-def error(msg, exception: Exception):
+def error(msg, exception: Optional[Exception] = None):
     print(f"{BG_RED}[×]{BG_RESET} {msg}", file=sys.stderr)
+    if exception is None:
+        return
+
     exception_type = type(exception)
 
     if exception_type == CaerbannogError:

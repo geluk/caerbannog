@@ -22,8 +22,12 @@ class LogContext:
     def change(self, msg):
         print(f"[{FG_YELLOW}≈{FG_RESET}] {self._indent()}{msg}", file=sys.stderr)
 
-    def assertion_fail(self, msg):
+    def assertion_fail(self, msg, assertion_failure):
         print(f"{self._indent()}  {FG_RED}×{FG_RESET} {msg}", file=sys.stderr)
+        print(
+            f"{BG_RED}[×]{BG_RESET}{self._indent()} {BG_RED}{assertion_failure.message}{BG_RESET}",
+            file=sys.stderr,
+        )
 
     def assertion_change(self, msg):
         print(f"{self._indent()}  {FG_YELLOW}⟳{FG_RESET} {msg}", file=sys.stderr)
