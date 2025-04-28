@@ -11,7 +11,10 @@ def commit():
     settings = _settings_builder._build()
     context._settings = settings
 
-    args.parse(target)
+    try:
+        args.parse(target)
+    except KeyboardInterrupt:
+        exit(1)
 
 
 def _load_target() -> Optional[str]:
