@@ -83,7 +83,7 @@ class Subject(ABC):
     def __init__(self) -> None:
         super().__init__()
         self._assertions: List[Assertion] = []
-        self._children: List[Subject] = []
+        self._subjects_before: List[Subject] = []
         self._description = None
 
     def apply(self, log: LogContext):
@@ -93,15 +93,15 @@ class Subject(ABC):
             for assertion in self._assertions:
                 assertion.prepare()
 
-            for child in self._children:
-                child.apply(log)
+            for subject in self._subjects_before:
+                subject.apply(log)
 
             for assertion in self._assertions:
                 assertion.apply(log)
 
     def changed(self) -> bool:
         return any(map(lambda a: a.changed(), self.assertions())) or any(
-            map(lambda c: c.changed(), self._children)
+            map(lambda c: c.changed(), self._subjects_before)
         )
 
     def add_assertion(self, assertion: "Assertion"):
@@ -132,12 +132,14 @@ class Subject(ABC):
     def remove_assertions(self, t: Type):
         self._assertions = list(filter(lambda a: type(a) != t, self._assertions))
 
-    def add_child(self, child: "Subject"):
-        self._children.append(child)
+    def add_subject_before(self, subject: "Subject"):
+        self._subjects_before.append(subject)
 
     def assertions(self) -> Iterable["Assertion"]:
         assertions = [
-            assertion for child in self._children for assertion in child.assertions()
+            assertion
+            for subject in self._subjects_before
+            for assertion in subject.assertions()
         ]
         assertions.extend(self._assertions)
 

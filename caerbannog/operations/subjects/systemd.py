@@ -90,7 +90,7 @@ class SystemdService(Subject):
             self._file.is_system_file()
         f(self._file)
 
-        self.add_child(self._file)
+        self.add_subject_before(self._file)
         return self
 
     def is_started(self):

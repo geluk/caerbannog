@@ -168,7 +168,7 @@ class IsDirectory(Assertion):
             if has_mode is not None:
                 parent.has_mode(has_mode._mode)
 
-            self._entry.add_child(parent)
+            self._entry.add_subject_before(parent)
 
     def apply(self, log: LogContext):
         if os.path.isdir(self._path):
@@ -223,7 +223,7 @@ class IsFile(Assertion):
             if has_owner is not None:
                 parent.has_owner(user=has_owner._user, group=has_owner._group)
 
-            self._entry.add_child(parent)
+            self._entry.add_subject_before(parent)
 
     def apply(self, log: LogContext):
         if os.path.isfile(self._path):
@@ -267,7 +267,7 @@ class IsSymlink(Assertion):
                 .is_present(create_parents=True)
                 .annotate(f"parent directory {fmt.code(str(parent_path))}")
             )
-            self._symlink.add_child(parent)
+            self._symlink.add_subject_before(parent)
 
     def apply(self, log: LogContext):
         if os.path.islink(self._path):
