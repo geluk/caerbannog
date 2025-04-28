@@ -182,9 +182,26 @@ class Assertion(ABC):
         self._assertion_name = name
 
     def register_change(self, change: "Change"):
-        self._changes.append(change)
         if context.should_modify():
-            change.execute()
+            if not context.should_confirm() or self.request_confirmation(change):
+                self._changes.append(change)
+                change.execute()
+        else:
+            self._changes.append(change)
+
+    def request_confirmation(self, change) -> bool:
+        # TODO: Not so pretty, we should receive the log context from the caller
+        log = LogContext()
+        with log.level():
+            change.display(log)
+
+        while True:
+            answer = input(f"Do you want to apply this change? (y/n): ")
+            answer = answer.strip().lower()
+            if answer in ["y", "yes"]:
+                return True
+            if answer in ["n", "no"]:
+                return False
 
     def changed(self) -> bool:
         return len(self._changes) > 0

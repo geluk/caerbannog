@@ -9,6 +9,9 @@ from caerbannog import context, password, secrets, target
 
 
 def apply(args: Namespace):
+    if args.confirm and args.dry_run:
+        raise ValueError("Cannot use --confirm and --dry-run at the same time")
+
     target.select_target(args.target)
     context.init(args)
 

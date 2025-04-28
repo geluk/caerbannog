@@ -39,6 +39,9 @@ def parse(dot_target: Optional[str]):
         "--elevate", action="store_true", help="Run as a privileged process"
     )
     apply.add_argument(
+        "--confirm", action="store_true", help="Confirm before making changes"
+    )
+    apply.add_argument(
         "--dry-run",
         action="store_true",
         help="Do not modify anything, only show what would happen",

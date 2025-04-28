@@ -29,6 +29,7 @@ _role_context = None
 _settings = None
 
 _should_modify = True
+_should_confirm = False
 
 
 def _load_vars():
@@ -59,9 +60,11 @@ def init(args: argparse.Namespace):
         return None
 
     global _should_modify
+    global _should_confirm
     global _context
 
     _should_modify = not try_read("dry_run")
+    _should_confirm = try_read("confirm")
 
     serialized_context = try_read("context")
     if serialized_context is not None:
@@ -145,6 +148,13 @@ def should_modify():
     Returns `False` if `--dry-run` is specified, `True` otherwise.
     """
     return _should_modify
+
+
+def should_confirm():
+    """
+    Returns `True` if `--confirm` is specified, `False` otherwise.
+    """
+    return _should_confirm
 
 
 def role_vars():
