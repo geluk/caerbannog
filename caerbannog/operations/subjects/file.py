@@ -38,8 +38,6 @@ class _FsEntry(Subject):
         return self
 
     def has_owner(self, user: Optional[str] = None, group: Optional[str] = None):
-        self.remove_assertions(HasOwner)
-
         self.add_assertion(HasOwner(self._path, user, group))
         return self
 

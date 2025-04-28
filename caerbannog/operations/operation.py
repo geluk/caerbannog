@@ -105,9 +105,11 @@ class Subject(ABC):
         )
 
     def add_assertion(self, assertion: "Assertion"):
-        existing = self.get_assertion(type(assertion))
-        if existing is not None:
-            self._assertions.remove(existing)
+        """
+        Add an assertion to this subject. If an assertion of the same type
+        already exists, it will be overwritten.
+        """
+        self.remove_assertions(type(assertion))
         self._assertions.append(assertion)
 
     def has_assertion(self, t: Type):
@@ -179,6 +181,8 @@ class Assertion(ABC):
 
     def register_change(self, change: "Change"):
         self._changes.append(change)
+        if context.should_modify():
+            change.execute()
 
     def changed(self) -> bool:
         return len(self._changes) > 0
@@ -225,6 +229,9 @@ class Change:
             (DiffType.NEUTRAL, detail) if type(detail) is str else detail
             for detail in details
         ]
+
+    def execute(self):
+        pass
 
     def display(self, log: LogContext):
         with log.level():
