@@ -158,6 +158,11 @@ def should_confirm():
 
 
 def role_vars():
+    """
+    Returns a collection of variables that can be written to during execution
+    of the current role. After the role has finished executing, the variables
+    are cleared.
+    """
     return _context["role_vars"]
 
 
