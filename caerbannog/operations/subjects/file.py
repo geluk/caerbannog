@@ -78,7 +78,7 @@ class File(_FsEntry):
         full_path = context.resolve_path(path)
 
         try:
-            with open(full_path, "r", encoding="utf-8") as file:
+            with open(full_path, "r", encoding="utf-8", newline="") as file:
                 content = file.read()
         except UnicodeDecodeError:
             with open(full_path, "rb") as file:
@@ -340,7 +340,7 @@ class HasContent(Assertion):
         is_different = False
         existing_content = ""
         try:
-            with open(self._path, "r", encoding="utf-8") as file:
+            with open(self._path, "r", encoding="utf-8", newline="") as file:
                 existing_content = file.read()
             is_different = existing_content != self._content
         except FileNotFoundError:
@@ -566,5 +566,5 @@ class ContentChanged(Change):
         super().__init__("content changed", details=lines)
 
     def execute(self):
-        with open(self._path, "w", encoding="utf-8") as file:
+        with open(self._path, "w", encoding="utf-8", newline="") as file:
             file.write(self._content)
