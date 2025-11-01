@@ -3,7 +3,7 @@ import json
 import os
 import platform
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar, Union
 
 if TYPE_CHECKING:
     # The context and settings modules form a circular dependency. The settings module
@@ -119,6 +119,21 @@ def groupname() -> str:
 def vars():
     return _context["vars"]
 
+T = TypeVar("T")
+def get_var(name: str, default: Optional[T] = None) -> Union[Any, T]:
+    """
+    Retrieves a variable using a dot-separated path. Returns `None` if the
+    variable (or any part of its path) is not defined. Use the `default`
+    parameter to specify a different default value.
+    """
+    path = name.split(".")
+    current = _context["vars"]
+    for part in path:
+        if part not in current:
+            return default
+        current = current[part]
+
+    return current
 
 def env(variable=None):
     if variable is not None:
