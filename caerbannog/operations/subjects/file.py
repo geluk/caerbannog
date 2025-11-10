@@ -343,8 +343,8 @@ class HasContent(Assertion):
             with open(self._path, "r", encoding="utf-8", newline="") as file:
                 existing_content = file.read()
             is_different = existing_content != self._content
-        except FileNotFoundError:
-            is_different = True
+        except FileNotFoundError as err:
+            raise AssertionEvaluationFailure(self, "file not found", err)
         except Exception as err:
             raise AssertionEvaluationFailure(self, "failed to open file", err)
 
