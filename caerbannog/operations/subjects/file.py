@@ -504,9 +504,14 @@ class ContentChanged(Change):
     def __init__(self, path: str, frm: str, to: str) -> None:
         self._path = path
         self._content = to
-        diff = list(
+
+        frm_lines = frm.splitlines(keepends=True)
+        to_lines = to.splitlines(keepends=True)
+
+        diff = list(difflib.unified_diff(frm_lines, to_lines))
+        diff_no_le = list(
             difflib.unified_diff(
-                frm.splitlines(keepends=True), to.splitlines(keepends=True)
+                frm.splitlines(keepends=False), to.splitlines(keepends=False)
             )
         )
 
@@ -544,7 +549,21 @@ class ContentChanged(Change):
             )
 
         lines: Sequence[Tuple[DiffType, str]] = []
-        if len(diff) > MAX_DIFF_SIZE:
+
+        if len(diff_no_le) == 0 and len(diff) != 0:
+            sample_frm = frm_lines[0]
+            sample_to = to_lines[0]
+            lines = [
+                DiffLine.neutral("Line endings changed"),
+                # Show raw line
+                DiffLine.add(sample_to.replace("\n", "\\n").replace("\r", "\\r")),
+                DiffLine.remove(sample_frm.replace("\n", "\\n").replace("\r", "\\r")),
+            ]
+
+            if len(frm_lines) > 1 or len(to_lines) > 1:
+                lines.append(DiffLine.neutral("..."))
+
+        elif len(diff) > MAX_DIFF_SIZE:
             added = count_by_type("+")
             removed = count_by_type("-")
 
