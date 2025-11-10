@@ -104,3 +104,46 @@ Now, if you run the script, you can apply the `git` role by selecting the
 ```
 python ./configure.py apply laptop
 ```
+
+## Extending Caerbannog
+
+Caerbannog is intended to be easy to extend, which is done by writing plugins or
+by creating new subjects.
+
+Plugins can be used to execute custom logic to set contextual information. For
+instance, you may want to read some system parameters and write these to global
+variables to make them available from your templates. This is easily done with
+a plugin.
+
+Adding new subjects will allow you to make new types of changes to your system.
+By default, Caerbannog provides subjects such as `File` and `Directory` (to
+create, remove, or update files and directories), `Package` (to install or
+update packages using the system package manager), and `SystemdService` (to
+control services with systemd).
+
+Subjects are classes inheriting from `Subject`. They expose public methods to
+let the user describe what should happen to this subject, e.g.
+`File(.gitignore).has_content("__pycache__")`. When these methods are executed,
+they will then register assertions, which describe desired properties for that
+subject. For instance, calling `has_content('text')` on a file implies two
+assertions for that file:
+
+1. The file exists.
+2. The content of the file is `text`.
+
+These are represented by the `IsFile` and `HasContent` assertions. Assertions
+can be created by inheriting from `Assertion`, and must implement an `apply()`
+method. When executed, this method should check if the assertion holds, and if
+it does not, it should make the necessary changes to the system in order to make
+that assertion true. Using `HasContent` as an example, the assertion will:
+
+1. Read the file.
+2. Compare its current content against its desired content.
+3. If both match, no action is taken.
+4. If they do not match, a change is registered to write the desired content
+   to the file.
+
+An assertion itself should not directly make changes to the system. Instead,
+it should create an instance of a class deriving from `Change`, which holds all
+information necessary to perform the change. Changes can be queued by calling
+`register_change()`.
