@@ -4,7 +4,7 @@ import sys
 from argparse import Namespace
 from typing import List
 
-from caerbannog.logging import fmt
+from caerbannog.logging import fmt, logger
 from caerbannog import context, password, secrets, target
 
 
@@ -38,7 +38,24 @@ def apply(args: Namespace):
         role_limit = None if args.role is None else args.role.split(",")
         skip_roles = [] if args.skip_role is None else args.skip_role.split(",")
 
-        target.current().execute(role_limit=role_limit, skip_roles=skip_roles)
+        applied_roles = target.current().execute(
+            role_limit=role_limit, skip_roles=skip_roles
+        )
+
+        seen_roles = set()
+        for role in applied_roles:
+            if role in seen_roles:
+                logger.warn(f"Role {fmt.code(role)} was applied multiple times")
+            seen_roles.add(role)
+
+        if role_limit is not None:
+            for role in set(role_limit) - set(applied_roles):
+                logger.warn(
+                    f"Requested role {fmt.code(role)} was not present in any target"
+                )
+
+        if not applied_roles:
+            logger.warn("No roles were applied")
 
 
 def show_target(args: Namespace):
