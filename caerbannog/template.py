@@ -50,7 +50,7 @@ def _create_environment() -> Environment:
 def render(*path: str, extra_vars: Optional[Dict[str, Any]] = None):
     env = _create_environment()
 
-    joined = _join_paths(path, None)
+    joined = _join_paths(path, "/")
     template = env.get_template(joined)
     ctx = context.context()
     if extra_vars is not None:
