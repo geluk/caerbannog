@@ -5,6 +5,8 @@ from typing import Any, cast
 
 from caerbannog import context, password, plugin
 from caerbannog.commandline import args
+from caerbannog.error import CaerbannogError
+from caerbannog.logging import logger
 
 
 def commit():
@@ -16,6 +18,9 @@ def commit():
     try:
         args.parse(target)
     except KeyboardInterrupt:
+        sys.exit(1)
+    except CaerbannogError as e:
+        logger.error("Command failed", e)
         sys.exit(1)
 
 

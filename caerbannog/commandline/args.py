@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import argcomplete
 
 from .. import target
+from ..error import CaerbannogError
 from . import subcommands
 
 
@@ -26,6 +27,10 @@ def parse(dot_target: str | None):
             "target", choices=valid_targets, help="Name of the target to apply"
         )
     else:
+        if dot_target not in valid_targets:
+            raise CaerbannogError(
+                f"target '{dot_target}' from .target file does not exist"
+            )
         apply.add_argument(
             "target",
             choices=valid_targets,
