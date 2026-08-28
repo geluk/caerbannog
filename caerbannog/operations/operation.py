@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from enum import Enum
 from typing import (
-    Any,
     Self,
     TypeVar,
     cast,
@@ -183,12 +182,21 @@ class Assertion(ABC):
             change.display(self._log)
 
         while True:
-            answer = input("Do you want to apply this change? (y/n): ")
+            if change.would_summarize():
+                answer = input(
+                    "Do you want to apply this change? ([y]es / [n]o /[v]iew full diff): "
+                )
+            else:
+                answer = input("Do you want to apply this change? ([y]es / [n]o): ")
+
             answer = answer.strip().lower()
             if answer in ["y", "yes"]:
                 return True
             if answer in ["n", "no"]:
                 return False
+            if answer in ["v", "view"]:
+                with self._log.level():
+                    change.display(self._log, summarize=False)
 
     def changed(self) -> bool:
         return len(self._changes) > 0
@@ -227,23 +235,55 @@ class AssertionEvaluationFailure(Exception):
         super().__init__(f'Failed to evaluate "{assertion._assertion_name}": {message}')
 
 
+MAX_DIFF_SIZE = 250
+
+
 class Change:
     def __init__(
         self, name: str, details: Sequence[str | tuple["DiffType", str]] = []
     ) -> None:
         self._name = name
-        self._details: Any = [
-            (DiffType.NEUTRAL, detail) if isinstance(detail, str) else detail
-            for detail in details
-        ]
+
+        self._details: list[tuple[DiffType, str]] = []
+        self._added = 0
+        self._removed = 0
+
+        for detail in details:
+            if isinstance(detail, str):
+                self._details.append((DiffType.NEUTRAL, detail))
+            else:
+                self._details.append(detail)
+
+                if cast(DiffType, detail[0]) == DiffType.ADD:
+                    self._added += 1
+                elif cast(DiffType, detail[0]) == DiffType.REMOVE:
+                    self._removed += 1
 
     def execute(self):
         pass
 
-    def display(self, log: LogContext):
+    def would_summarize(self) -> bool:
+        return len(self._details) > MAX_DIFF_SIZE
+
+    def display(self, log: LogContext, summarize: bool = True):
         with log.level():
             log.detail(self._name)
-            for diff_type, detail in self._details:
+
+            details = []
+            if summarize and self.would_summarize():
+                details = [
+                    DiffLine.neutral("Diff too long to be shown. Summary:"),
+                    DiffLine.add(f"{self._added} lines"),
+                    DiffLine.remove(f"{self._removed} lines"),
+                    DiffLine.neutral("Sample:"),
+                    *self._details[:10],
+                    DiffLine.detail("8< -------------------------------"),
+                    *self._details[-10:],
+                ]
+            else:
+                details = self._details
+
+            for diff_type, detail in details:
                 if diff_type == DiffType.NEUTRAL:
                     log.detail(detail)
                 elif diff_type == DiffType.ADD:

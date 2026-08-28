@@ -18,8 +18,6 @@ from caerbannog.operations import (
     host,
 )
 
-MAX_DIFF_SIZE = 250
-
 
 class _FsEntry(Subject):
     def __init__(self, path: str) -> None:
@@ -556,30 +554,8 @@ class ContentChanged(Change):
                         formatted.append(DiffLine.neutral(trimmed))
             return formatted
 
-        def count_by_type(difftype: str):
-            return sum(
-                1
-                for _ in filter(
-                    lambda l: l.strip() not in headers and l.startswith(difftype), diff
-                )
-            )
-
         lines: Sequence[tuple[DiffType, str]] = []
-        if len(diff) > MAX_DIFF_SIZE:
-            added = count_by_type("+")
-            removed = count_by_type("-")
-
-            lines = [
-                DiffLine.neutral("Diff too long to be shown. Summary:"),
-                DiffLine.add(f"{added} lines"),
-                DiffLine.remove(f"{removed} lines"),
-                DiffLine.neutral("Sample:"),
-                *format_diff(diff[:10]),
-                DiffLine.detail("8< -------------------------------"),
-                *format_diff(diff[-10:]),
-            ]
-        else:
-            lines = format_diff(diff)
+        lines = format_diff(diff)
 
         if len(lines) == 0:
             lines.append((DiffType.NEUTRAL, "<only whitespace changes>"))
