@@ -3,7 +3,12 @@ import os
 import traceback
 from typing import Any
 
-from jinja2 import Environment, FileSystemLoader, StrictUndefined, UndefinedError
+from jinja2 import (
+    ChainableUndefined,
+    Environment,
+    FileSystemLoader,
+    UndefinedError,
+)
 
 from caerbannog import context, target
 from caerbannog.error import CaerbannogError
@@ -22,6 +27,26 @@ def _join_paths(paths, separator) -> str:
     return joined
 
 
+# ChainableUndefined alone would render a typo as an empty string;
+# StrictUndefined alone cannot guard on a missing optional variable. This
+# combination allows navigation such as `{% if vars.foo.bar %}` while still
+# failing loudly when an undefined value is actually used.
+class StrictChainableUndefined(ChainableUndefined):
+    __slots__ = ()
+
+    def __str__(self):  # noqa: PLE0307
+        self._fail_with_undefined_error()
+
+    def __iter__(self):
+        self._fail_with_undefined_error()
+
+    def __eq__(self, other):
+        self._fail_with_undefined_error()
+
+    def __ne__(self, other):
+        self._fail_with_undefined_error()
+
+
 def _create_environment() -> Environment:
     env = Environment()
     env.filters["join_path"] = _join_paths
@@ -32,7 +57,7 @@ def _create_environment() -> Environment:
     ):
         env.globals[name] = f
 
-    env.undefined = StrictUndefined
+    env.undefined = StrictChainableUndefined
 
     # For more details, see
     # https://jinja.palletsprojects.com/en/3.1.x/templates/#whitespace-control
